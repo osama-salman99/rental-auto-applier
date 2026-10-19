@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <header th:fragment="appHeader" class="app-header">
+      <div class="container app-header-inner">
+        <a class="app-brand" href="/">
+          <svg class="app-brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"
+               fill="currentColor" fill-rule="evenodd" aria-hidden="true">
+            <path d="M4 30 L14 8 L32 18 L50 8 L60 30 L60 58 L4 58 Z
+                     M8 34 L18 34 L18 42 L8 42 Z
+                     M46 34 L56 34 L56 42 L46 42 Z
+                     M28 44 L36 44 L36 58 L28 58 Z" />
+          </svg>
+          <span>Holland2Stay</span>
+        </a>
+        <nav class="app-nav" aria-label="Primary">
+          <a href="/"
+             th:attr="aria-current=${currentPath == '/'} ? 'page' : null">Dashboard</a>
+          <a href="/stats"
+             th:attr="aria-current=${currentPath == '/stats'} ? 'page' : null">Stats</a>
+          <a href="/config"
+             th:attr="aria-current=${currentPath == '/config'} ? 'page' : null">Configurations</a>
+        </nav>
+      </div>
+    </header>
+  </body>
+</html>

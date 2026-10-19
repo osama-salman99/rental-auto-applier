@@ -1,0 +1,669 @@
+/* ============================================================================
+   Ik Wil Huren — design system
+
+   Shared with the roofz console on purpose. Different landlord, same job: a calm
+   operations panel you glance at on a phone. Same cards, chips, nav and steppers,
+   so neither has to be relearned.
+   ============================================================================ */
+
+/* Always reserve the vertical scrollbar's width, so a tab that scrolls and a tab
+   that doesn't render at the SAME content width. Without this, switching to a
+   taller tab makes the scrollbar appear (and vanish again on a short one), which
+   shifts the space-between top nav sideways — the tabs look misaligned between
+   pages — and reflows the whole page as a visible flicker. No effect on mobile
+   (overlay scrollbars take no layout width). */
+html { scrollbar-gutter: stable; }
+
+:root {
+  --rz-accent: var(--pico-primary, #0172ad);
+  --rz-ok: #1f9d4d;
+  --rz-warn: #e6a100;
+  --rz-bad: #d33;
+  --rz-radius: 12px;
+  --rz-gap: 0.75rem;
+}
+
+/* Global app header — slim blue top bar with the brand. Nav lives here on
+   desktop and becomes a bottom tab bar on mobile. */
+.app-header {
+  background: var(--pico-primary, #1095c1);
+  padding: 0.7rem 0;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.app-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.app-brand {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.app-brand-icon { width: 1.5rem; height: 1.5rem; display: block; }
+.app-brand:hover { color: #fff; opacity: 0.85; }
+
+.app-nav { display: flex; gap: 0.25rem; }
+.app-nav a {
+  color: #fff;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 8px;
+  line-height: 1;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.app-nav a .nav-ico { width: 1.05rem; height: 1.05rem; flex: none; }
+.app-nav a:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+.app-nav a[aria-current="page"] { background: rgba(255, 255, 255, 0.25); color: #fff; }
+
+/* Mobile: header stays as a slim brand bar; nav drops to a fixed bottom tab bar
+   (thumb-reachable, native-app feel). Icons stack over short labels. */
+@media (max-width: 767px) {
+  :root { --rz-nav-h: 4.1rem; }
+  .app-header { padding: 0.6rem 0; margin-bottom: 1rem; }
+  .app-nav {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 1000;
+    background: var(--pico-background-color, #fff);
+    border-top: 1px solid var(--pico-muted-border-color, #e2e2e2);
+    padding-bottom: env(safe-area-inset-bottom);
+    gap: 0;
+    justify-content: space-around;
+    box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.06);
+  }
+  .app-nav a {
+    flex: 1;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.55rem 0.15rem;
+    border-radius: 0;
+    color: var(--pico-muted-color, #6b7280);
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .app-nav a .nav-ico { width: 1.45rem; height: 1.45rem; }
+  .app-nav a:hover { background: transparent; color: var(--pico-muted-color, #6b7280); }
+  .app-nav a[aria-current="page"] { background: transparent; color: var(--rz-accent); }
+  /* Reserve space so the fixed bottom bar never covers page content. */
+  main.container { padding-bottom: calc(var(--rz-nav-h) + 1rem); }
+  /* The build badge is fixed to bottom-left; on mobile the nav bar is fixed there too,
+     so at bottom:0 the badge covered the first tab's label ("Home" read as "ome"). Lift
+     it to sit just above the bar. */
+  .osmosis-ver { bottom: calc(var(--rz-nav-h) + env(safe-area-inset-bottom)); }
+}
+
+/* ── Reusable cards / badges / section headers (mobile-first) ── */
+.rz-card {
+  background: var(--pico-card-background-color, #fff);
+  border: 1px solid var(--pico-muted-border-color, #e5e7eb);
+  border-radius: var(--rz-radius);
+  padding: 1rem;
+}
+.rz-section-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--pico-muted-color, #6b7280);
+  margin: 1.5rem 0 0.6rem;
+}
+.rz-section-sub {
+  font-size: 0.82rem;
+  color: var(--pico-muted-color, #6b7280);
+  line-height: 1.45;
+  margin: -0.4rem 0 0.7rem;
+}
+.rz-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.rz-badge-ok { background: rgba(31, 157, 77, 0.14); color: #157a3a; }
+.rz-badge-warn { background: rgba(230, 161, 0, 0.16); color: #9a6b00; }
+.rz-badge-bad { background: rgba(221, 51, 51, 0.14); color: #b02121; }
+.rz-badge-muted { background: rgba(120, 120, 120, 0.14); color: #555; }
+.rz-badge-offer { background: var(--rz-ok, #1f9d4d); color: #fff; }
+
+/* Status chips with an optional leading dot. Plain inline-block flow (no flexbox — flex items were
+   collapsing to near-zero width and overlapping their text). */
+.chip-row { margin: 0.9rem 0 1.25rem; line-height: 2.1; }
+.chip {
+  display: inline-block; white-space: nowrap; padding: 0.28rem 0.7rem; margin: 0 0.35rem 0.35rem 0;
+  border-radius: 999px; font-size: 0.76rem; font-weight: 600;
+  background: rgba(120, 120, 120, 0.14); color: #555;
+}
+.chip.ok { background: rgba(31, 157, 77, 0.15); color: #157a3a; }
+.chip.warn { background: rgba(230, 161, 0, 0.18); color: #8a6000; }
+.chip.bad { background: rgba(221, 51, 51, 0.15); color: #b02121; }
+.chip.chip-dot::before {
+  content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: currentColor;
+  display: inline-block; margin-right: 0.4rem; vertical-align: middle;
+}
+
+/* Page titles use the same brand blue as the header. */
+main.container > h1 {
+  color: var(--pico-primary, #1095c1);
+}
+
+/* Time cells stay on a single line so the table doesn't reflow awkwardly. */
+time { white-space: nowrap; }
+
+/* ── Shared across pages ── */
+:root { --pico-font-size: 90%; }
+table { font-size: 0.85rem; }
+
+/* A wide data table (the observe-mode crawlers' dashboard still uses one; stats pages too)
+   otherwise pushes the page wider than the phone and silently clips its right-hand columns —
+   price and status scroll off-screen with no scrollbar. Give the table its own horizontal
+   scroll region on narrow screens instead. The card-based dashboards use .listing-list (divs),
+   not a <table>, so they are unaffected. */
+@media (max-width: 767px) {
+  main.container table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+}
+
+/* ── Sortable column headers ── */
+thead a { color: inherit; text-decoration: none; white-space: nowrap; cursor: pointer; }
+thead a:hover, thead a:focus { color: inherit; text-decoration: none; }
+.sort-ind { font-size: 0.75em; opacity: 0.6; }
+
+/* ── Badges (dashboard) ── */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge-available { background: #d4edda; color: #155724; }
+.badge-occupied  { background: #f8d7da; color: #721c24; }
+.badge-option    { background: #fff3cd; color: #856404; }
+.badge-unavailable { background: #e2e3e5; color: #383d41; }
+
+/* ── Dashboard: summary strip, sort chips, listing cards ── */
+.rz-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin: 0.25rem 0 1.25rem; }
+.rz-strip > div {
+  background: var(--pico-card-background-color, #fff); border: 1px solid var(--pico-muted-border-color, #e5e7eb);
+  border-radius: var(--rz-radius); padding: 0.7rem 0.5rem; text-align: center; min-width: 0;
+}
+.rz-strip .v { display: block; font-size: 1.55rem; font-weight: 800; line-height: 1.1; color: var(--rz-accent); }
+.rz-strip .l { display: block; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pico-muted-color, #6b7280); font-weight: 700; margin-top: 0.15rem; }
+
+.rz-sort { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.9rem; align-items: center; }
+.rz-sort .lbl { font-size: 0.72rem; color: var(--pico-muted-color, #6b7280); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.rz-sort a, .rz-sort button {
+  font-size: 0.78rem; padding: 0.3rem 0.75rem; border-radius: 999px; text-decoration: none;
+  border: 1px solid var(--pico-muted-border-color, #e5e7eb); color: #374151;
+  background: transparent; white-space: nowrap; cursor: pointer; width: auto; margin: 0;
+  line-height: 1.35; font-weight: 600;
+}
+.rz-sort a:hover, .rz-sort button:hover { border-color: var(--rz-accent); background: transparent; }
+.rz-sort a.on, .rz-sort button.on { background: var(--rz-accent); color: #fff; border-color: var(--rz-accent); }
+
+.listing-list { display: grid; gap: 0.7rem; }
+/* Desktop (10% of use, but make it count): use the width for a multi-column card grid. */
+@media (min-width: 768px) {
+  .listing-list { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+}
+.listing-card { display: flex; flex-direction: column; gap: 0.55rem; }
+.lc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem; }
+.lc-title { font-weight: 700; font-size: 1.02rem; text-decoration: none; line-height: 1.25; }
+.lc-title:hover { text-decoration: underline; }
+.lc-sub { display: flex; flex-wrap: wrap; gap: 0.3rem 0.7rem; font-size: 0.85rem; color: var(--pico-muted-color, #555); align-items: center; }
+.lc-sub .price { font-weight: 800; color: var(--pico-color, #222); }
+.lc-match { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; color: #157a3a; background: rgba(31, 157, 77, 0.16); padding: 0.12rem 0.45rem; border-radius: 5px; }
+.lc-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; border-top: 1px solid var(--pico-muted-border-color, #eee); padding-top: 0.55rem; font-size: 0.8rem; color: var(--pico-muted-color, #666); }
+/* "Map" link — opens the location in Google Maps (the app, on a phone). */
+.lc-map { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.8rem; font-weight: 600; color: var(--rz-accent, var(--pico-primary, #1095c1)); text-decoration: none; white-space: nowrap; }
+.lc-map:hover { text-decoration: underline; }
+.lc-map svg { flex: none; }
+
+/* Progress dots — kept in app.css (not the page's <head>) so they survive SPA tab navigation. */
+.progress { display: inline-flex; gap: 5px; align-items: center; }
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; background: #cfcfcf; cursor: help; border: 1px solid rgba(0, 0, 0, 0.15); }
+.dot-done { background: var(--rz-ok, #1f9d4d); }
+.dot-active { background: var(--rz-warn, #e6a100); }
+.dot-failed { background: var(--rz-bad, #d33); }
+.dot-pending { background: #cfcfcf; }
+.progress-legend { font-size: 0.78rem; color: var(--pico-muted-color, #777); margin: 0.75rem 0 1rem; }
+.progress-legend .dot { cursor: default; vertical-align: middle; }
+
+/* ── Sparklines (dashboard) ── */
+.sparkline { width: 60px; height: 16px; vertical-align: middle; }
+.sparkline path { fill: none; stroke: #4a7aef; stroke-width: 1.5; }
+svg.sparkline-clickable { cursor: pointer; background: none; border: none; box-shadow: none; padding: 0; border-radius: 0; }
+svg.sparkline-clickable:focus-visible { outline: 2px solid rgba(74, 122, 239, 0.6); outline-offset: 1px; }
+
+/* ── Inquiry detail modal (dashboard) ── */
+#inquiry-detail article { max-width: 720px; }
+#inquiry-detail header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.5rem; }
+.detail-chart { position: relative; }
+.detail-chart svg { width: 100%; height: auto; display: block; }
+.detail-chart .axis   { stroke: var(--pico-muted-border-color, #ccc); stroke-width: 1; }
+.detail-chart .grid   { stroke: var(--pico-muted-border-color, #e3e3e3); stroke-width: 1; stroke-dasharray: 3 3; }
+.detail-chart .series { fill: none; stroke: #4a7aef; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.detail-chart .marker { fill: #4a7aef; }
+.detail-chart .hit    { fill: transparent; cursor: pointer; }
+.detail-chart .label  { fill: var(--pico-muted-color, #666); font-size: 11px; }
+.chart-tip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 8px));
+  background: rgba(20, 20, 20, 0.92); color: #fff;
+  padding: 4px 8px; border-radius: 4px; font-size: 11px; line-height: 1.3;
+  white-space: nowrap; pointer-events: none; z-index: 10;
+}
+
+/* ── Stat cards (stats) ── */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; }
+.stat-card { background: var(--pico-card-background-color); border: 1px solid var(--pico-muted-border-color); border-radius: var(--rz-radius); padding: 1rem; text-align: center; }
+.stat-card .value { font-size: 2rem; font-weight: 800; line-height: 1.2; color: var(--rz-accent); }
+.stat-card .label { font-size: 0.8rem; color: var(--pico-muted-color); margin-top: 0.25rem; }
+.breakdown { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.breakdown-item { background: var(--pico-card-background-color); border: 1px solid var(--pico-muted-border-color); border-radius: 6px; padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+.breakdown-item strong { margin-left: 0.3rem; }
+
+/* ── Nav progress bar (instant feedback on tab tap) ── */
+#nav-progress {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  background: var(--pico-primary, #0172ad); z-index: 2000;
+  opacity: 0; pointer-events: none;
+}
+/* Creep toward 90% over a few seconds so a slow page still feels like progress… */
+#nav-progress.active { width: 90%; opacity: 1; transition: width 6s cubic-bezier(0.12, 0.8, 0.2, 1), opacity 0.2s ease; }
+/* …then snap to 100% and fade out when the swap completes. */
+#nav-progress.done { width: 100%; opacity: 0; transition: width 0.2s ease, opacity 0.35s ease 0.1s; }
+
+/* ── Config page ── */
+.grid-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+/* Fieldsets read as cards (config groups); scoped to fieldsets, which only appear on config. */
+main.container fieldset {
+  border: 1px solid var(--pico-muted-border-color, #e5e7eb);
+  border-radius: var(--rz-radius);
+  padding: 1rem 1.1rem 1.1rem;
+  margin-top: 1rem;
+  background: var(--pico-card-background-color, #fff);
+}
+main.container fieldset legend {
+  font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em;
+  font-weight: 700; color: var(--pico-muted-color, #6b7280); padding: 0 0.4rem;
+}
+/* Toggles grouped together, one per row (full label, no cramped grid cells). */
+.switch-group { display: flex; flex-direction: column; gap: 0.55rem; margin: 0.25rem 0 0.5rem; }
+.switch-group label { display: flex; align-items: center; gap: 0.6rem; margin: 0; cursor: pointer; }
+.switch-group label input[type="checkbox"] { margin: 0; flex: none; }
+
+/* Actions — grouped, equal-width tap targets. */
+.action-group { margin-bottom: 1rem; }
+.action-group-label {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;
+  font-weight: 600; color: var(--pico-muted-color); margin: 0 0 0.4rem;
+}
+.action-group-label.danger { color: #c0392b; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.5rem; }
+.action-grid form { margin: 0; }
+.action-grid button { width: 100%; margin: 0; }
+/* Destructive actions read as dangerous: red outline that fills on hover/focus. */
+button.danger-btn { background: transparent; color: #c0392b; border-color: #c0392b; }
+button.danger-btn:hover, button.danger-btn:focus { background: #c0392b; color: #fff; border-color: #c0392b; }
+
+/* Docked save bar — stays flush at the bottom edge while scrolling (not a floating button). */
+.save-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 900;
+  background: var(--pico-background-color);
+  border-top: 1px solid var(--pico-muted-border-color);
+  padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom));
+}
+.save-bar button { width: 100%; max-width: 60rem; margin: 0 auto; display: block; }
+.save-bar-spacer { height: 6rem; }
+
+/* The docked save bar must sit ABOVE the bottom tab bar, not on top of it. Both are fixed to the
+   bottom of the screen, so at bottom:0 the save bar and the navigation fight for the same strip of
+   glass — and the nav loses, leaving the phone with no way out of the page. */
+@media (max-width: 767px) {
+  .save-bar {
+    bottom: var(--rz-nav-h);
+    padding-bottom: 0.7rem;
+  }
+  /* Clear the save bar AND the nav beneath it, so the last field is never trapped behind them. */
+  .save-bar-spacer { height: calc(var(--rz-nav-h) + 5rem); }
+  /* Toasts ride above both. */
+  .toast { bottom: calc(var(--rz-nav-h) + 4.5rem); }
+}
+
+
+/* Floating toast so save feedback is visible at the thumb, not scrolled off the top. Sits above
+   the docked save bar. */
+.toast {
+  position: fixed; left: 50%; bottom: 5.5rem;
+  transform: translateX(-50%) translateY(1rem);
+  z-index: 1000; max-width: 92vw; padding: 0.85rem 1.4rem; border-radius: 12px;
+  color: #fff; font-weight: 600; text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { background: #1f9d4d; }
+.toast.error { background: #c0392b; }
+
+/* ── Page header with right-aligned actions (title + proportional buttons) ── */
+.page-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem 1rem; }
+.page-head h1 { margin: 0; }
+.page-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.page-actions form { margin: 0; }
+.page-actions button, .page-actions [role="button"] {
+  margin: 0; width: auto; padding: 0.5rem 1.1rem; font-size: 0.9rem; line-height: 1.4; white-space: nowrap;
+}
+
+/* ── Portal page: application funnel stepper ── */
+.portal-app .lc-head { align-items: flex-start; }
+.pa-city { font-size: 0.8rem; color: var(--pico-muted-color, #6b7280); margin-top: 0.1rem; }
+.funnel { display: flex; margin: 0.85rem 0 0.35rem; }
+.funnel-step { flex: 1; text-align: center; position: relative; }
+.funnel-step .fdot {
+  width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid #d0d5dd;
+  margin: 0 auto 0.35rem; position: relative; z-index: 1;
+}
+.funnel-step .flabel { font-size: 0.68rem; color: var(--pico-muted-color, #6b7280); line-height: 1.2; }
+/* connector line to the next step */
+.funnel-step:not(:last-child)::after {
+  content: ""; position: absolute; top: 7px; left: 50%; width: 100%; height: 2px; background: #e5e7eb; z-index: 0;
+}
+.funnel-step.done .fdot { background: var(--rz-ok, #1f9d4d); border-color: var(--rz-ok, #1f9d4d); }
+.funnel-step.done::after { background: var(--rz-ok, #1f9d4d); }
+.funnel-step.done .flabel { color: #157a3a; font-weight: 600; }
+.funnel-step.active .fdot {
+  background: var(--rz-warn, #e6a100); border-color: var(--rz-warn, #e6a100);
+  box-shadow: 0 0 0 3px rgba(230, 161, 0, 0.18);
+}
+.funnel-step.active .flabel { color: #8a6000; font-weight: 700; }
+/* Offer/allocation reached the Decision step — a filled green dot with a ring so it reads as "won,
+   but act now". */
+.funnel-step.offer .fdot {
+  background: var(--rz-ok, #1f9d4d); border-color: var(--rz-ok, #1f9d4d);
+  box-shadow: 0 0 0 3px rgba(31, 157, 77, 0.22);
+}
+.funnel-step.offer::after { background: var(--rz-ok, #1f9d4d); }
+.funnel-step.offer .flabel { color: #157a3a; font-weight: 700; }
+.pa-next { font-size: 0.82rem; color: var(--pico-muted-color, #555); margin: 0 0 0.55rem; }
+.pa-next .pa-arrow { color: var(--rz-warn, #e6a100); font-weight: 700; }
+/* Offer call-to-action: a green-tinted banner with a prominent "respond" button and the 24h note. */
+.pa-offer {
+  display: flex; align-items: center; gap: 0.7rem 0.9rem; flex-wrap: wrap;
+  margin: 0.1rem 0 0.65rem; padding: 0.6rem 0.8rem; border-radius: 10px;
+  background: rgba(31, 157, 77, 0.10); border: 1px solid rgba(31, 157, 77, 0.35);
+}
+.pa-offer-btn {
+  margin: 0; padding: 0.5rem 1.05rem; font-size: 0.9rem; font-weight: 700; white-space: nowrap;
+  background: var(--rz-ok, #1f9d4d); border-color: var(--rz-ok, #1f9d4d); color: #fff;
+}
+.pa-offer-btn:hover, .pa-offer-btn:focus { background: #157a3a; border-color: #157a3a; color: #fff; }
+.pa-offer-note { font-size: 0.8rem; color: #157a3a; font-weight: 600; }
+
+/* ── Documents page ── */
+.doc-file { word-break: break-all; }
+.doc-row { display: flex; flex-direction: column; gap: 0.5rem; }
+.doc-row-main { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-weight: 600; }
+.doc-row-meta { display: flex; align-items: center; gap: 0.5rem 1rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--pico-muted-color, #666); }
+.doc-row-meta form { margin: 0 0 0 auto; }
+/* Tighter form fields inside the profile editor so more fits on screen. */
+.grid-filters label { margin-bottom: 0; }
+.grid-filters input, .grid-filters select { margin-bottom: 0; }
+/* Helper text under a field: Pico pulls <small> up with a negative top margin (it assumes the input
+   keeps its bottom margin). Since we zeroed the input's bottom margin above, give the helper its own
+   spacing so it sits BELOW the input instead of overlapping it. */
+.grid-filters small { display: block; margin-top: 0.4rem; }
+
+/* ── Login page ── */
+.login-wrap { max-width: 24rem; margin: 0 auto; }
+
+
+/* ── The five viewing requests MVGM lets you hold. The headline of the home page. ──
+   Reuses the .dot vocabulary from the progress stepper: a filled dot is a slot at work. */
+.slot-row { display: flex; gap: 0.4rem; margin: 0.6rem 0 0; }
+.slot-pip { flex: 1; height: 0.5rem; border-radius: 999px; background: #cfcfcf; }
+.slot-pip.filled { background: var(--rz-ok, #1f9d4d); }
+.slot-note { font-size: 0.85rem; color: var(--pico-muted-color, #6b7280); line-height: 1.5; margin: 0.8rem 0 0; }
+.slot-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.slot-head h2 { font-size: 1rem; margin: 0; }
+.slot-count { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--rz-accent); }
+
+/* The score that decides which five we hold — a pill you glance at, not a sentence you read. */
+.lc-score {
+  flex: none; min-width: 1.9rem; text-align: center;
+  padding: 0.12rem 0.45rem; border-radius: 6px;
+  font-size: 0.72rem; font-weight: 800; font-variant-numeric: tabular-nums;
+  background: rgba(120, 120, 120, 0.14); color: #555;
+}
+.listing-card.in-draw .lc-score { background: rgba(31, 157, 77, 0.16); color: #157a3a; }
+.listing-card.queued .lc-score { background: rgba(74, 122, 239, 0.16); color: #2f52a0; }
+
+/* Why we are not applying: the verdict, one line. */
+.lc-why { font-size: 0.84rem; line-height: 1.45; color: var(--pico-muted-color, #6b7280); margin: 0; }
+.listing-card.in-draw .lc-why { color: #157a3a; font-weight: 600; }
+.listing-card.blocked .lc-why { color: #b02121; }
+.listing-card.in-draw { border-left: 3px solid var(--rz-ok, #1f9d4d); }
+.lc-invited {
+  display: inline-block;
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--rz-ok, #1f9d4d);
+  padding: 0.22rem 0.6rem;
+  border-radius: 7px;
+  line-height: 1.35;
+}
+.listing-card.queued { border-left: 3px solid var(--rz-accent); }
+.listing-card.blocked { border-left: 3px solid var(--rz-bad, #d33); }
+.listing-card.gone { opacity: 0.65; }
+
+/* ── The hundreds of homes we can never apply for, counted rather than listed. ──
+   "780 outside Amsterdam" says as much as 780 cards would, and fits on a phone. */
+.tally { padding: 0; overflow: hidden; }
+.tally-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0.7rem 1rem; font-size: 0.86rem; color: var(--pico-muted-color, #6b7280);
+  border-bottom: 1px solid var(--pico-muted-border-color, #eee);
+}
+.tally-n { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--pico-color, #222); }
+.tally-all {
+  display: block; padding: 0.75rem 1rem; font-size: 0.85rem;
+  font-weight: 700; text-decoration: none; color: var(--rz-accent);
+}
+
+/* ── What the score means ──
+   The number decides which five homes you hold. Leaving it unexplained makes the crawler look
+   arbitrary, so the reasoning is one tap away rather than buried in a commit message. */
+.scoring { margin-top: 1rem; }
+.scoring summary {
+  cursor: pointer; font-weight: 700; font-size: 0.9rem; color: var(--rz-accent);
+}
+.scoring p { font-size: 0.86rem; line-height: 1.55; color: var(--pico-muted-color, #6b7280); margin: 0.75rem 0 0; }
+.scoring-parts { margin: 0.9rem 0 0; }
+.scoring-parts dt {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  font-weight: 700; font-size: 0.88rem; margin-top: 0.8rem;
+}
+.scoring-parts dt span {
+  font-size: 0.72rem; font-weight: 800; font-variant-numeric: tabular-nums;
+  color: var(--rz-accent); background: rgba(74, 122, 239, 0.14);
+  padding: 0.1rem 0.45rem; border-radius: 6px; white-space: nowrap;
+}
+.scoring-parts dd {
+  margin: 0.2rem 0 0; font-size: 0.84rem; line-height: 1.5;
+  color: var(--pico-muted-color, #6b7280);
+}
+.scoring-foot { font-style: italic; }
+
+/* ── Recent moves ──
+   The allocator trades requests around on its own; from the outside that is just five addresses
+   that quietly change. This is the running commentary. */
+.moves { padding: 0; }
+.move {
+  display: flex; gap: 0.7rem; align-items: flex-start;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--pico-muted-border-color, #eee);
+}
+.move:last-child { border-bottom: none; }
+.move-arrow {
+  flex: none; width: 1.4rem; height: 1.4rem; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 0.8rem; font-weight: 800; line-height: 1;
+}
+.move.in .move-arrow { background: rgba(31, 157, 77, 0.16); color: #157a3a; }
+.move.out .move-arrow { background: rgba(120, 120, 120, 0.16); color: #666; }
+.move-body { min-width: 0; flex: 1; }
+.move-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; }
+.move-title { font-weight: 700; font-size: 0.9rem; }
+.move-score {
+  flex: none; font-size: 0.7rem; font-weight: 800; font-variant-numeric: tabular-nums;
+  background: rgba(74, 122, 239, 0.14); color: #2f52a0;
+  padding: 0.08rem 0.4rem; border-radius: 5px;
+}
+.move-meta {
+  display: flex; flex-wrap: wrap; gap: 0.2rem 0.6rem;
+  font-size: 0.76rem; color: var(--pico-muted-color, #6b7280); margin-top: 0.1rem;
+}
+.move-why {
+  margin: 0.25rem 0 0; font-size: 0.8rem; line-height: 1.45;
+  color: var(--pico-muted-color, #6b7280);
+}
+
+/* Action buttons sit side by side, so they must be the same height whatever their labels say —
+   otherwise one wraps to two lines and the pair looks broken. */
+.action-grid { align-items: stretch; }
+.action-grid button { height: 100%; white-space: nowrap; }
+
+/* ============================================================================
+   SHARED ADDITIONS — frontend unification (Phase B)
+   Everything above this line is ikwilhuren's stylesheet verbatim (the agreed
+   base look). Below are classes the other crawlers also need, merged in so this
+   single sheet — served from crawler-core — dresses all four apps.
+   ============================================================================ */
+
+/* roofz: right cluster of the card foot (Map icon + inquiry sparkline). */
+.lc-foot-right { display: inline-flex; align-items: center; gap: 0.7rem; }
+
+/* Card-list "applied"/registered state + inline interest toggle (rebo pipeline as cards). */
+.listing-card.applied { opacity: 0.6; }
+.lc-interest { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--pico-muted-color, #555); margin: 0; }
+.lc-interest input { margin: 0; }
+
+/* Listing-table status badges beyond ikwilhuren's set (vesteda listings, rebo
+   pipeline, roofz stages). ik already defines available/occupied/option/unavailable. */
+.badge-optioned { background: #fff3cd; color: #856404; }
+.badge-removed  { background: #e2e3e5; color: #383d41; }
+.badge-rented   { background: #f8d7da; color: #721c24; }
+.badge-reserved { background: #fff3cd; color: #856404; }
+.badge-unknown  { background: #e2e3e5; color: #383d41; }
+
+/* Applied-row styling for listing tables (rebo pipeline, vesteda listings). */
+tr.applied td { opacity: 0.45; text-decoration: line-through; }
+tr.applied td.applied-cell { opacity: 1; text-decoration: none; }
+
+/* Config page action grid — vesteda's stretch variant, harmless for the others. */
+.action-grid { align-items: stretch; }
+.action-grid button { height: 100%; white-space: nowrap; }
+/* ── Homes browse page: filter/sort bar + compact home rows ── */
+.browse-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 0.6rem; margin: 0 0 1rem;
+}
+.filter-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+/* Explicit colours here on purpose: Pico redefines --pico-color to its button-inverse (white) on
+   every <button>, so a chip that inherited it rendered white text on a white pill — invisible. */
+.fchip {
+  appearance: none; cursor: pointer; border: 1px solid #cdd4dc;
+  background: transparent; color: #33414d;
+  padding: 0.34rem 0.85rem; border-radius: 999px; font-size: 0.82rem; font-weight: 600; line-height: 1.2;
+}
+.fchip:hover { border-color: var(--rz-accent); }
+.fchip.is-active { background: var(--rz-accent); border-color: var(--rz-accent); color: #fff; }
+.sort-field { display: inline-flex; align-items: center; gap: 0.45rem; margin: 0; font-size: 0.82rem;
+  color: var(--pico-muted-color, #6b7280); }
+.sort-field select {
+  width: auto; margin: 0; padding: 0.3rem 1.9rem 0.3rem 0.7rem; font-size: 0.82rem; height: auto;
+  border-radius: 8px;
+}
+
+.home-list { display: grid; gap: 0.55rem; }
+.home-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.85rem;
+  background: var(--pico-card-background-color, #fff);
+  border: 1px solid var(--pico-muted-border-color, #e5e7eb);
+  border-radius: var(--rz-radius); padding: 0.7rem 0.9rem;
+}
+.home-row.is-applied { border-left: 3px solid var(--rz-ok); }
+.hr-main { min-width: 0; }
+.hr-title { font-weight: 700; font-size: 1rem; text-decoration: none; color: var(--rz-accent);
+  display: block; line-height: 1.25; }
+.hr-title:hover { text-decoration: underline; }
+.hr-facts { display: flex; flex-wrap: wrap; gap: 0.2rem 0.7rem; margin-top: 0.2rem;
+  color: var(--pico-muted-color, #6b7280); font-size: 0.86rem; }
+.hr-rent { font-weight: 700; color: var(--pico-color, #1f2937); }
+.hr-side { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; flex: none;
+  text-align: right; }
+.hr-tags { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.3rem; }
+.hr-flag { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  text-transform: uppercase; letter-spacing: 0.02em; }
+.hr-flag.applied { background: rgba(31, 157, 77, 0.16); color: #157a3a; }
+.hr-flag.can { background: rgba(1, 114, 173, 0.14); color: var(--rz-accent); }
+.hr-seen { font-size: 0.76rem; color: var(--pico-muted-color, #9aa3ad); }
+.home-empty { color: var(--pico-muted-color, #6b7280); padding: 1.5rem 0; text-align: center; }
+
+@media (max-width: 560px) {
+  .home-row { align-items: flex-start; }
+  .hr-title { font-size: 0.95rem; }
+  .hr-side { align-items: flex-end; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .fchip { color: #d6dde5; border-color: #3a444f; }
+  .fchip.is-active { color: #fff; }
+  .hr-rent { color: #e5e9ee; }
+}
+:root[data-theme="dark"] .fchip { color: #d6dde5; border-color: #3a444f; }
+:root[data-theme="dark"] .hr-rent { color: #e5e9ee; }
+:root[data-theme="light"] .fchip { color: #333; border-color: #d8dde3; }
+
+/* Build-version badge — a small white chip pinned flush to the very
+   bottom-left corner, above everything, visible on every page and through
+   scrolling. pointer-events:none so it never intercepts a click. Green text
+   means this tab is on the latest build; app.js flips it to .stale (red) when
+   the running service reports a newer version than the one baked in here. */
+.osmosis-ver {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 2147483000;
+  padding: 2px 5px;
+  border-top-right-radius: 4px;
+  background: #fff;
+  border-top: 1px solid rgba(0, 0, 0, .12);
+  border-right: 1px solid rgba(0, 0, 0, .12);
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, .06);
+  font: 600 10px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: .02em;
+  color: #1a7f37;   /* green = on the latest build */
+  user-select: none;
+  pointer-events: none;
+}
+.osmosis-ver.stale { color: #d1242f; }   /* red = stale cached build */

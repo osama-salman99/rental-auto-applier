@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <!-- One home, and the reason it is or isn't being applied for. Built on roofz's listing-card so
+         both consoles read the same. Three lines: address, the numbers, the verdict. The score sits
+         in the corner as a pill — worth a glance, not a read.
+
+         In its own file so it is never rendered on its own with an unbound parameter. -->
+    <article th:fragment="listingCard(v)" class="rz-card listing-card" th:classappend="${v.kind}">
+      <div class="lc-head">
+        <a class="lc-title" target="_blank" rel="noopener"
+           th:href="'https://ikwilhuren.nu/object/' + ${v.listing.slug} + '/'"
+           th:text="${v.listing.title}">Address</a>
+        <span class="lc-score"
+              th:if="${v.kind == 'in-draw' or v.kind == 'queued'}"
+              th:text="${v.score}"
+              th:title="${v.why}">0</span>
+      </div>
+
+      <div class="lc-sub">
+        <span class="price" th:if="${v.listing.price != null}" th:text="'€' + ${v.listing.price}"></span>
+        <span th:if="${v.listing.livingArea != null}" th:text="${v.listing.livingArea} + ' m²'"></span>
+        <span th:if="${v.listing.bedrooms != null}"
+              th:text="${v.listing.bedrooms} + (${v.listing.bedrooms} == 1 ? ' bed' : ' beds')"></span>
+        <span class="lc-match" th:if="${v.fresh}">JUST LISTED</span>
+      </div>
+
+      <!-- Once MVGM draws us, the plain "you're in the draw" verdict understates it: a viewing
+           invitation is on its way. Say so, loudly, in its place. -->
+      <p class="lc-invited" th:if="${v.invited}">Invited 🎉 — check your email for the viewing</p>
+      <p class="lc-why" th:unless="${v.invited}" th:text="${v.verdict}">Why</p>
+
+      <!-- How long we've known about it. Not decoration: a home fills up as it ages, so its age is
+           most of why it scores what it scores. app.js turns this into "3 hours ago" in the reader's
+           own timezone. -->
+      <div class="lc-foot">
+        <span>
+          <th:block th:if="${v.listing.firstSeenAt != null}">First seen
+            <time th:datetime="${v.listing.firstSeenAt}"
+                  th:title="${v.listing.firstSeenAt}"
+                  data-fmt="relative"
+                  th:text="${v.listing.firstSeenAt}"></time>
+          </th:block>
+        </span>
+        <!-- One tap to the location. The plain maps.google URL opens the Google Maps app on a
+             phone and the website on a laptop, so we need no coordinates of our own. -->
+        <a class="lc-map" target="_blank" rel="noopener"
+           th:href="'https://www.google.com/maps/search/?api=1&amp;query=' + ${#uris.escapeQueryParam(v.listing.title + ' ' + v.listing.city)}"
+           aria-label="Open location in Google Maps">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+        </a>
+      </div>
+    </article>
+  </body>
+</html>

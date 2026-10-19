@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <header th:fragment="appHeader" class="app-header">
+      <div class="container app-header-inner">
+        <a class="app-brand" href="/">
+          <svg class="app-brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"
+               fill="currentColor" fill-rule="evenodd" aria-hidden="true">
+            <path d="M32 6 L4 28 L12 28 L12 58 L52 58 L52 28 L60 28 Z M28 40 L36 40 L36 58 L28 58 Z" />
+          </svg>
+          <span>Roofz Crawler</span>
+        </a>
+        <nav class="app-nav" aria-label="Primary">
+          <a href="/" th:attr="aria-current=${currentPath == '/'} ? 'page' : null">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 10.5 12 4l9 6.5"/><path d="M5.5 9.8V20h13V9.8"/>
+            </svg><span>Home</span>
+          </a>
+          <a href="/stats" th:attr="aria-current=${currentPath == '/stats'} ? 'page' : null">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 20v-6M12 20V5M18 20v-9"/>
+            </svg><span>Stats</span>
+          </a>
+          <a href="/portal" th:attr="aria-current=${currentPath == '/portal'} ? 'page' : null">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M22 3 11 14"/><path d="M22 3 15 21l-4-7-7-4z"/>
+            </svg><span>Portal</span>
+          </a>
+          <a href="/documents" th:attr="aria-current=${currentPath == '/documents'} ? 'page' : null">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>
+            </svg><span>Docs</span>
+          </a>
+          <a href="/config" th:attr="aria-current=${currentPath == '/config'} ? 'page' : null">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2.2"/><circle cx="15" cy="12" r="2.2"/><circle cx="8" cy="18" r="2.2"/>
+            </svg><span>Config</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+  </body>
+</html>

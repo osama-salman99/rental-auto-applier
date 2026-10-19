@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A key, not a house. rebo shipped a byte-identical copy of vesteda's house
+     icon, which is invisible as a bug until both sit side by side on a dashboard
+     and you cannot tell which crawler you are looking at. A key is unmistakable
+     at 20px and still says "renting". -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <path fill="#1095c1" fill-rule="evenodd"
+        d="M22 12 A18 18 0 1 0 22 48 A18 18 0 1 0 22 12 Z
+           M22 22 A8 8 0 1 1 22 38 A8 8 0 1 1 22 22 Z"/>
+  <path fill="#1095c1"
+        d="M36 26 H58 V34 H52 V44 H44 V34 H36 Z"/>
+</svg>

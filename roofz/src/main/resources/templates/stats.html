@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Stats — Roofz Crawler</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+    <main class="container">
+      <h1>Stats</h1>
+
+      <details open>
+        <summary><strong>Crawler Activity</strong></summary>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="value" th:text="${totalCrawls}"></div>
+            <div class="label">Total Crawls</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" th:text="${crawlsLast24h}"></div>
+            <div class="label">Crawls (24h)</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" th:text="${failedCrawls}"></div>
+            <div class="label">Failed</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" th:text="${totalNewDiscovered}"></div>
+            <div class="label">New Discovered</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" th:text="${newLast24h}"></div>
+            <div class="label">New (24h)</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" th:text="${totalStatusChanges}"></div>
+            <div class="label">Status Changes</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" th:text="${statusLast24h}"></div>
+            <div class="label">Changes (24h)</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" th:text="${notificationsSent}"></div>
+            <div class="label">Notifications Sent</div>
+          </div>
+        </div>
+      </details>
+
+      <details open>
+        <summary><strong>Recent Crawls</strong></summary>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th>Matching</th>
+                <th>New</th>
+                <th>Changed</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="crawl : ${recentCrawls}">
+                <td><time th:datetime="${crawl.timestamp}" th:title="${crawl.timestamp}" th:text="${crawl.timestamp}"></time></td>
+                <td th:text="${crawl.success ? 'OK' : crawl.errorMessage}"></td>
+                <td th:text="${crawl.totalListings}"></td>
+                <td th:text="${crawl.matchingListings}"></td>
+                <td th:text="${crawl.newListings}"></td>
+                <td th:text="${crawl.statusChanged}"></td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(recentCrawls)}">
+                <td colspan="6" style="text-align: center;">No crawls recorded yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <details>
+        <summary><strong>Listings Overview</strong></summary>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="value" th:text="${totalListings}"></div>
+            <div class="label">Total Tracked</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" th:text="${#numbers.formatDecimal(avgArea, 0, 0)} + ' m²'"></div>
+            <div class="label">Avg Area</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" th:text="'€' + ${#numbers.formatDecimal(avgPrice, 0, 0)}"></div>
+            <div class="label">Avg Price</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" th:text="${minArea} + '–' + ${maxArea} + ' m²'"></div>
+            <div class="label">Area Range</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" th:text="'€' + ${minPrice} + '–' + ${maxPrice}"></div>
+            <div class="label">Price Range</div>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary><strong>By City</strong></summary>
+        <div class="breakdown">
+          <div class="breakdown-item" th:each="entry : ${byCity}">
+            <span th:text="${entry.key}"></span><strong th:text="${entry.value}"></strong>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary><strong>By Status</strong></summary>
+        <div class="breakdown">
+          <div class="breakdown-item" th:each="entry : ${byStage}">
+            <span th:text="${entry.key}"></span><strong th:text="${entry.value}"></strong>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary><strong>Time-to-Option</strong></summary>
+        <p th:if="${overallMedianTimeToOption == null}" style="opacity: 0.6;">
+          Not enough data yet — we'll have median time-to-option once listings transition through stages.
+        </p>
+        <p th:unless="${overallMedianTimeToOption == null}">
+          Overall median:
+          <strong th:text="${overallMedianTimeToOption} + ' min'"></strong>
+        </p>
+        <table th:if="${not #maps.isEmpty(medianTimeToOptionBySubtype)}">
+          <thead><tr><th>Subtype</th><th>Median (min)</th></tr></thead>
+          <tbody>
+            <tr th:each="e : ${medianTimeToOptionBySubtype}">
+              <td th:text="${e.key}"></td>
+              <td th:text="${e.value}"></td>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+
+      <details>
+        <summary><strong>Inquiries at Option</strong></summary>
+        <p th:if="${medianInquiriesAtOption == null}" style="opacity: 0.6;">
+          Not enough data yet.
+        </p>
+        <p th:unless="${medianInquiriesAtOption == null}">
+          Median inquiries when a listing went to option:
+          <strong th:text="${medianInquiriesAtOption}"></strong>
+          <span style="opacity: 0.6;" th:text="'(' + ${inquiriesAtOptionSampleSize} + ' samples)'"></span>
+        </p>
+      </details>
+
+      <details>
+        <summary><strong>Known Projects</strong></summary>
+        <table>
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>City</th>
+              <th>Total Units</th>
+              <th>Future Offer</th>
+              <th>First Seen</th>
+              <th>Last Seen</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="p : ${knownProjects}"
+                th:style="${p.isFutureOffer} ? 'background:rgba(230,161,0,0.15);' : ''">
+              <td th:text="${p.title}"></td>
+              <td th:text="${p.city}"></td>
+              <td th:text="${p.totalUnits}"></td>
+              <td th:text="${p.isFutureOffer ? 'YES' : 'no'}"></td>
+              <td><time th:datetime="${p.firstSeenAt}" data-fmt="relative" th:text="${p.firstSeenAt}"></time></td>
+              <td><time th:datetime="${p.lastSeenAt}" data-fmt="relative" th:text="${p.lastSeenAt}"></time></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(knownProjects)}">
+              <td colspan="6" style="text-align: center; opacity: 0.6;">
+                Project watcher hasn't run yet — first sweep starts 60s after app startup.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Settings — Ik Wil Huren</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+
+    <main class="container">
+      <h1>Settings</h1>
+      <p style="color: var(--pico-muted-color); line-height:1.55; max-width:40rem;">
+        What to look for, and how hard to chase it. The answers that go <em>inside</em> an application
+        live on the <a href="/application">Apply</a> page.
+      </p>
+
+      <div th:if="${success}" class="rz-card" role="status"
+           style="margin-bottom:1rem; border-left:3px solid var(--rz-ok);" th:text="${success}"></div>
+      <div th:if="${error}" class="rz-card" role="alert"
+           style="margin-bottom:1rem; border-left:3px solid var(--rz-bad);" th:text="${error}"></div>
+
+      <form method="post" th:action="@{/config}">
+        <fieldset>
+          <legend>What you're looking for</legend>
+          <div class="grid-filters">
+            <label>
+              City
+              <input type="text" name="targetCity" th:value="${config.targetCity}"
+                     placeholder="Amsterdam, Diemen, Amstelveen" />
+              <small>Separate several with commas. Districts (e.g. Nieuw-West) come under their city.
+                Leave blank to search everywhere.</small>
+            </label>
+            <label>
+              Smallest you'd take (m²)
+              <input type="number" name="minSquareMeters" th:value="${config.minSquareMeters}" min="0" />
+              <small>Worth revisiting when nothing comes through — few homes fit your budget as it is.</small>
+            </label>
+            <label>
+              Fewest bedrooms
+              <input type="number" name="minBedrooms" th:value="${config.minBedrooms}" min="0" placeholder="Any" />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>What you can afford</legend>
+          <p style="color: var(--pico-muted-color); font-size:0.86rem; line-height:1.5; margin:0 0 1rem;">
+            MVGM won't allocate you a home unless your income covers a multiple of the yearly rent. Not
+            a preference — a request above the line can't be won, and it wastes one of your five.
+          </p>
+          <div class="grid-filters">
+            <label>
+              Gross monthly income (€)
+              <input type="number" name="grossMonthlyIncome" th:value="${config.grossMonthlyIncome}" min="0" />
+              <small>Including holiday allowance. Also what MVGM is told.</small>
+            </label>
+            <label>
+              Multiplier (× yearly rent)
+              <input type="number" name="incomeMultiplier" th:value="${config.incomeMultiplier}" min="1" />
+              <small>42 is what MVGM states for a single income.</small>
+            </label>
+          </div>
+          <p th:if="${config.rentCeiling != null}" class="rz-card"
+             style="margin-top:1rem; border-left:3px solid var(--rz-accent); font-size:0.9rem;">
+            Your ceiling is <strong th:text="'€' + ${config.rentCeiling}">€1400</strong> a month.
+            Anything dearer is skipped.
+          </p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Applying</legend>
+          <p style="color: var(--pico-muted-color); font-size:0.86rem; line-height:1.5; margin:0 0 1rem;">
+            MVGM lets you hold five viewing requests at once. Every home is scored on whether it can
+            still be won, how fresh it is, and how well it suits you — and your five are always kept on
+            the five best. When a better home appears, the weakest is traded in for it.
+          </p>
+
+          <div class="switch-group">
+            <label>
+              <input type="hidden" name="_autoApplyEnabled" value="on" />
+              <input type="checkbox" name="autoApplyEnabled" th:checked="${config.autoApplyEnabled}" value="true" role="switch" />
+              Apply for me automatically
+            </label>
+            <label>
+              <input type="hidden" name="_autoApplyDryRun" value="on" />
+              <input type="checkbox" name="autoApplyDryRun" th:checked="${config.autoApplyDryRun}" value="true" role="switch" />
+              Dry run — decide everything, send nothing
+            </label>
+            <label>
+              <input type="hidden" name="_skipCrowdedListings" value="on" />
+              <input type="checkbox" name="skipCrowdedListings" th:checked="${config.skipCrowdedListings}" value="true" role="switch" />
+              Prefer homes that aren't full yet
+            </label>
+            <label>
+              <input type="hidden" name="_autoWithdrawEnabled" value="on" />
+              <input type="checkbox" name="autoWithdrawEnabled" th:checked="${config.autoWithdrawEnabled}" value="true" role="switch" />
+              Trade in weaker requests automatically
+            </label>
+          </div>
+
+          <small style="display:block; color: var(--pico-muted-color); line-height:1.5; margin:0.75rem 0;">
+            MVGM stops accepting requests once a home is full — every home we applied to carrying its
+            "many viewing requests" warning came straight back as "no more viewings possible". Those
+            still count as long shots (MVGM re-draws if their first choice walks), so they're held, but
+            they lose their slot to any home you could properly win. A request MVGM has already drawn
+            is never touched.
+          </small>
+
+          <div class="grid-filters">
+            <label>
+              Requests to hold at once
+              <input type="number" name="maxActiveRequests" th:value="${config.maxActiveRequests}" min="1" max="5" />
+              <small>MVGM's own limit is 5.</small>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Notifications</legend>
+          <div class="switch-group">
+            <label>
+              <input type="hidden" name="_notificationsEnabled" value="on" />
+              <input type="checkbox" name="notificationsEnabled" th:checked="${config.notificationsEnabled}" value="true" role="switch" />
+              Send me notifications
+            </label>
+          </div>
+          <div class="grid-filters">
+            <label>
+              ntfy topic
+              <input type="text" name="ntfyTopic" th:value="${config.ntfyTopic}" placeholder="e.g. ikwilhuren-abc123" />
+            </label>
+            <label>
+              ntfy server
+              <input type="url" name="ntfyServerUrl" th:value="${config.ntfyServerUrl}" placeholder="https://ntfy.sh" />
+            </label>
+          </div>
+          <input type="hidden" name="_onlyAvailable" value="on" />
+          <input type="hidden" name="onlyAvailable" value="true" />
+        </fieldset>
+
+        <div class="save-bar">
+          <button type="submit">Save settings</button>
+        </div>
+      </form>
+
+      <fieldset>
+        <legend>Housekeeping</legend>
+        <div class="action-grid">
+          <form method="post" th:action="@{/clear-listings}">
+            <button type="submit" class="secondary outline">Clear old homes</button>
+          </form>
+          <form method="post" th:action="@{/logout}">
+            <button type="submit" class="secondary outline">Log out</button>
+          </form>
+        </div>
+      </fieldset>
+      <div class="save-bar-spacer"></div>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

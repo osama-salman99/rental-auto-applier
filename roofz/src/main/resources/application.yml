@@ -1,0 +1,122 @@
+spring:
+  application:
+    name: roofz-crawler
+  servlet:
+    multipart:
+      # Applicant documents (payslips, bank statements, ID scans) — allow comfortably large uploads.
+      max-file-size: 15MB
+      max-request-size: 60MB
+  task:
+    scheduling:
+      # Spring defaults to a SINGLE scheduler thread, and six tasks share it: the crawl, the portal
+      # pipeline (which makes ReletPortal HTTPS calls), two cache refreshes, the crawl_log pruner and
+      # the project watcher. Serialised on one thread, any of them delays the crawl — that, plus a
+      # trigger measured from completion, is how a 10s poll interval was observed running at 30s.
+      # The crawl is the race we are trying to win; it gets a thread that nothing else can block.
+      pool:
+        size: 4
+  datasource:
+    # TRACE_LEVEL_FILE=0: H2 otherwise writes stack traces to <db>.trace.db with no bound — a single
+    # recurring error once produced 79MB of them. DB_CLOSE_ON_EXIT=FALSE stops H2 racing the Spring
+    # context on shutdown and logging a burst of "Database is already closed" that looks like a
+    # failure and is not.
+    url: jdbc:h2:file:./data/roofz-db;TRACE_LEVEL_FILE=0;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+  h2:
+    console:
+      enabled: false
+
+server:
+  port: 8080
+  address: 127.0.0.1
+  # The HTTPS proxy in front forwards X-Forwarded-* headers; honour them so
+  # redirects (e.g. the login flow) use the external https scheme and host.
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      tracking-modes: cookie
+      timeout: 1d
+  tomcat:
+    accesslog:
+      enabled: true
+      directory: /opt/roofz-crawler/logs
+      pattern: "%{yyyy-MM-dd HH:mm:ss}t | %a | %r | %s | %Tms"
+
+management:
+  server:
+    port: 8081
+    address: 127.0.0.1
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    eu.roofz.crawler: INFO
+
+crawler:
+  app:
+    display-name: "Roofz Crawler"
+  http:
+    user-agent: "RoofzCrawler/1.0"
+  # One crawl_log row is written per pass (~8.6k/day) and every stats aggregate scans the table, so
+  # letting it grow forever is what pinned the heap at its ceiling. Rows past this window are folded
+  # into the lifetime rollup and deleted — /stats totals stay exact, only per-pass detail ages out.
+  # Nothing reads crawl_log beyond "recent crawls" and the 24h figures. Set to 0 to disable pruning.
+  crawl-log-retention-days: 14
+  security:
+    # Every page is behind the shared login; only this machine endpoint (the email webhook, guarded
+    # by X-Ingest-Token) stays public.
+    public-paths: "/portal/ingest-email"
+    # Document upload/delete are admin-authed form POSTs; ignoring CSRF avoids the multipart-CSRF
+    # filter-ordering pitfall (the token can't be read before the multipart body is parsed).
+    csrf-ignore-patterns: "/test-twilio-call, /portal/ingest-email, /documents/upload, /documents/delete/**"
+
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID:}
+  auth-token: ${TWILIO_AUTH_TOKEN:}
+  flow-sid: ${TWILIO_FLOW_SID:}
+  from-number: ${TWILIO_FROM_NUMBER:}
+  to-number: ${TWILIO_TO_NUMBER:}
+
+# ReletPortal (roofz.onosre.com) application pipeline. The account is set only in the environment
+# (RELETPORTAL_EMAIL, RELETPORTAL_PASSWORD): never commit it. accountId defaults to the
+# roofz.onosre.com tenant but is resolvable from the domain settings endpoint when blank.
+reletportal:
+  email: ${RELETPORTAL_EMAIL:}
+  password: ${RELETPORTAL_PASSWORD:}
+  account-id: ${RELETPORTAL_ACCOUNT_ID:4def8fb7-ab71-49e4-b3da-77ece7f4c236}
+  domain-host: ${RELETPORTAL_DOMAIN_HOST:roofz.onosre.com}
+
+# Shared secret for POST /portal/ingest-email (whatever forwards the inbound email, e.g. a Cloudflare
+# Email Worker → crawler). The endpoint is public but inert without a matching X-Ingest-Token header.
+ingest:
+  secret: ${INGEST_TOKEN:}
+  # Raw inbound emails are archived here (relative to the working directory) so a
+  # missed invite link can be re-inspected and replayed. Set blank to disable archiving.
+  email-archive-dir: ${INGEST_EMAIL_ARCHIVE_DIR:./data/emails}
+
+app:
+  admin:
+    # The name the login wall gives whoever is signed in. The password is checked only by the login
+    # service (osmosis-auth); this crawler just verifies the signed cookie it sets.
+    username: "${ADMIN_USERNAME:osmosis}"
+
+roofz:
+  # Optional JSON file with the full-application profile, read on the first start while the database
+  # has none. Personal, so it never lives in this repository; without it, fill the profile in on the
+  # Documents page. src/test/resources/applicant-profile.json shows the shape, with made-up values.
+  applicant-profile: ${ROOFZ_APPLICANT_PROFILE:}
+  # Where this crawler is reached, for links inside its alerts.
+  public-url: ${ROOFZ_PUBLIC_URL:https://roofz.${osmosis.auth.domain:osmosis.work}}

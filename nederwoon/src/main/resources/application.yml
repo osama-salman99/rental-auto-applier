@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: nederwoon-crawler
+  datasource:
+    url: jdbc:h2:file:./data/nederwoon-db;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+  h2:
+    console:
+      enabled: false
+
+server:
+  port: 8170
+  address: 127.0.0.1
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      tracking-modes: cookie
+      timeout: 1d
+  tomcat:
+    accesslog:
+      enabled: true
+      directory: /opt/nederwoon-crawler/logs
+      pattern: "%{yyyy-MM-dd HH:mm:ss}t | %a | %r | %s | %Tms"
+
+crawler:
+  # One crawl_log row is written per pass and every stats aggregate scans the table, so letting it
+  # grow forever eventually pins the heap (roofz reached 475k rows). Rows past this window are folded
+  # into the lifetime rollup and deleted — /stats totals stay exact, only per-pass detail ages out.
+  # Set to 0 to disable pruning.
+  crawl-log-retention-days: 14
+  app:
+    display-name: "NederWoon"
+  security:
+    csrf-ignore-patterns: "/listings/*/applied"
+
+app:
+  admin:
+    # The name the login wall gives whoever is signed in. The password is checked only by the login
+    # service (osmosis-auth); this crawler just verifies the signed cookie it sets.
+    username: "${ADMIN_USERNAME:osmosis}"
+
+management:
+  server:
+    port: 8171
+    address: 127.0.0.1
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    eu.nederwoon.crawler: INFO

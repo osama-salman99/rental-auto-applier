@@ -1,0 +1,9 @@
+rootProject.name = 'rental-auto-applier'
+
+// The shared core, and the login wall and /version endpoint it re-exports.
+include ':crawler-core', ':auth-core', ':version-core'
+project(':auth-core').projectDir = file('crawler-core/auth-core')
+project(':version-core').projectDir = file('crawler-core/version-core')
+
+// One application per rental website.
+include ':roofz', ':ikwilhuren', ':vesteda', ':rebo', ':holland2stay', ':nederwoon', ':vbt'

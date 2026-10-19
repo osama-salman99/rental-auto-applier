@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Control — REBO</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+    <main class="container">
+      <h1>Control</h1>
+
+      <div th:if="${success}" class="rz-card" role="status"
+           style="margin-bottom:1rem; border-left:3px solid var(--rz-ok);" th:text="${success}"></div>
+      <div th:if="${error}" class="rz-card" role="alert"
+           style="margin-bottom:1rem; border-left:3px solid var(--rz-bad);" th:text="${error}"></div>
+
+      <!-- Auto-apply agent (read-only; the income-derived ceiling may appear here). -->
+      <p class="rz-section-label">Auto-apply agent</p>
+      <div class="rz-card">
+        <div class="chip-row">
+          <span th:if="${agent.armedLive()}" class="chip ok chip-dot">Armed — registering for real</span>
+          <span th:if="${agent.enabled and agent.dryRun}" class="chip warn">Dry run — logging only</span>
+          <span th:if="${!agent.enabled}" class="chip bad">Off</span>
+          <span th:if="${agent.incomeConfigured}" class="chip"
+                th:text="'Ceiling €' + ${agent.ceiling} + '/mo'">Ceiling €1292/mo</span>
+          <span th:unless="${agent.incomeConfigured}" class="chip bad">No income — fail-closed</span>
+          <span th:if="${agent.contactComplete}" class="chip ok">Details complete</span>
+          <span th:unless="${agent.contactComplete}" class="chip bad">Details incomplete</span>
+          <span class="chip"
+                th:text="${agent.targetCity != null and !agent.targetCity.isBlank()} ? 'Watching ' + ${agent.targetCity} : 'All cities'">Watching Amsterdam</span>
+          <span class="chip" th:text="${agent.registered} + ' registered'">0 registered</span>
+        </div>
+
+        <div class="rz-strip" style="margin-top:1rem;">
+          <div><span class="v" th:text="${agent.total}">0</span><span class="l">Tracked</span></div>
+          <div>
+            <span class="v" th:text="${agent.openInScope}">0</span>
+            <span class="l" th:text="${agent.targetCity != null and !agent.targetCity.isBlank()} ? 'In ' + ${agent.targetCity} : 'In scope'">In scope</span>
+          </div>
+          <div><span class="v" th:text="${agent.affordable}">0</span><span class="l">Within budget</span></div>
+        </div>
+
+        <p style="margin:0.25rem 0 0; font-size:0.85rem; color:var(--pico-muted-color);">
+          Armed from the server. Income, phone and the armed/dry-run flags live in the systemd
+          drop-in and can't be edited here — only the search filters below are.
+        </p>
+      </div>
+
+      <!-- Crawler search filters (stored in the app; safe to edit here). -->
+      <p class="rz-section-label">Search filters</p>
+      <div class="rz-card">
+        <form method="post" th:action="@{/config}">
+          <div class="grid-filters">
+            <label>Min m²
+              <input type="number" name="minSquareMeters" th:value="${config.minSquareMeters}" min="0" placeholder="Any" />
+            </label>
+            <label>Min bedrooms
+              <input type="number" name="minBedrooms" th:value="${config.minBedrooms}" min="0" placeholder="Any" />
+            </label>
+            <label>Max rent (€/mo)
+              <input type="number" name="maxPrice" th:value="${config.maxPrice}" min="0" placeholder="Any" />
+              <small>Optional extra cap. Your income ceiling
+                (<span th:text="${agent.incomeConfigured ? ('€' + agent.ceiling) : 'unset'}">€1292</span>,
+                incl. service costs) already limits both notifications and auto-apply.</small>
+            </label>
+            <label>City
+              <input type="text" name="targetCity" th:value="${config.targetCity}" placeholder="Any" />
+            </label>
+          </div>
+          <div class="grid-filters" style="margin-top: 1rem;">
+            <label>
+              <input type="hidden" name="_onlyAvailable" value="on" />
+              <input type="checkbox" name="onlyAvailable" th:checked="${config.onlyAvailable}" value="true" role="switch" />
+              Only available listings
+            </label>
+            <label>
+              <input type="hidden" name="_notificationsEnabled" value="on" />
+              <input type="checkbox" name="notificationsEnabled" th:checked="${config.notificationsEnabled}" value="true" role="switch" />
+              Push notifications
+            </label>
+          </div>
+          <fieldset style="margin-top: 1rem;">
+            <legend><strong>ntfy</strong></legend>
+            <div class="grid-filters">
+              <label>Topic
+                <input type="text" name="ntfyTopic" th:value="${config.ntfyTopic}" placeholder="e.g. rebo-abc123" />
+              </label>
+              <label>Server URL
+                <input type="url" name="ntfyServerUrl" th:value="${config.ntfyServerUrl}" placeholder="https://ntfy.sh" />
+              </label>
+            </div>
+          </fieldset>
+          <div style="margin-top: 1.25rem;">
+            <button type="submit">Save filters</button>
+          </div>
+        </form>
+      </div>
+
+      <p class="rz-section-label">Actions</p>
+      <div class="rz-card">
+        <div class="action-grid">
+          <form method="post" th:action="@{/crawl-now}">
+            <button type="submit" class="secondary">Crawl now</button>
+          </form>
+          <form method="post" th:action="@{/clear-listings}"
+                onsubmit="return confirm('Clear all non-matching listings? Matches and registered entries are kept.');">
+            <button type="submit" class="contrast outline">Clear non-matching</button>
+          </form>
+          <form method="post" th:action="@{/clear-all-listings}"
+                onsubmit="return confirm('Clear ALL listings? This cannot be undone.');">
+            <button type="submit" class="contrast outline">Clear all</button>
+          </form>
+          <form method="post" th:action="@{/logout}">
+            <button type="submit" class="outline secondary">Sign out</button>
+          </form>
+        </div>
+      </div>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

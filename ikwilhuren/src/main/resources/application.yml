@@ -1,0 +1,86 @@
+spring:
+  application:
+    name: ikwilhuren-crawler
+  datasource:
+    url: jdbc:h2:file:./data/ikwilhuren-db
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+  h2:
+    console:
+      enabled: false
+
+spring.task.scheduling.shutdown:
+  await-termination: true
+  # A crawl in flight when the JVM is asked to stop used to be cut off mid-transaction, and the
+  # deploy would end in a burst of "Database is already closed" errors that looked alarming and
+  # meant nothing. Let the current pass finish first. Noise that resembles a failure is worse than
+  # no logging at all: it teaches you to ignore the log.
+  await-termination-period: 40s
+
+server:
+  port: 8100
+  address: 127.0.0.1
+  shutdown: graceful
+  # The HTTPS proxy in front forwards X-Forwarded-* headers; honour them so
+  # redirects (e.g. the login flow) use the external https scheme and host.
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      tracking-modes: cookie
+      timeout: 1d
+  tomcat:
+    accesslog:
+      enabled: true
+      directory: /opt/ikwilhuren-crawler/logs
+      pattern: "%{yyyy-MM-dd HH:mm:ss}t | %a | %r | %s | %Tms"
+
+crawler:
+  # One crawl_log row is written per pass and every stats aggregate scans the table, so letting it
+  # grow forever eventually pins the heap (roofz reached 475k rows). Rows past this window are folded
+  # into the lifetime rollup and deleted — /stats totals stay exact, only per-pass detail ages out.
+  # Set to 0 to disable pruning.
+  crawl-log-retention-days: 14
+  curl:
+    # Origin header the shared crawler-core CurlFetcher sends on portal form POSTs (login, viewing
+    # request, withdraw). Must be the portal's own origin or the POST is rejected. Setting this is
+    # also what opts this crawler into the CurlFetcher bean (HttpFetchConfig is @ConditionalOnProperty).
+    base-origin: https://ikwilhuren.nu
+  app:
+    display-name: "Ik Wil Huren"
+  security:
+    # Every page is behind the shared login.
+    csrf-ignore-patterns: "/listings/*/applied"
+
+# The ikwilhuren.nu account used to request viewings. Set only in the environment
+# (IKWILHUREN_EMAIL, IKWILHUREN_PASSWORD): never commit it, never store it in the database.
+ikwilhuren:
+  email: ${IKWILHUREN_EMAIL:}
+  password: ${IKWILHUREN_PASSWORD:}
+
+app:
+  admin:
+    # The name the login wall gives whoever is signed in. The password is checked only by the login
+    # service (osmosis-auth); this crawler just verifies the signed cookie it sets.
+    username: "${ADMIN_USERNAME:osmosis}"
+
+management:
+  server:
+    port: 8101
+    address: 127.0.0.1
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    eu.ikwilhuren.crawler: INFO

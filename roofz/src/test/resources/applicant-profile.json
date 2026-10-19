@@ -1,0 +1,56 @@
+{
+  "person": {
+    "personalDetails": {
+      "initials": "J.",
+      "firstName": "Jan",
+      "insertion": "",
+      "lastName": "Jansen",
+      "email": "jan.jansen@example.com",
+      "phoneNumber": "+31612345678",
+      "dateOfBirth": "1990-01-01",
+      "gender": "male",
+      "livingSituation": "renting"
+    },
+    "address": {
+      "country": "NL",
+      "street": "Voorbeeldstraat",
+      "houseNumber": 1,
+      "houseNumberExtension": "A",
+      "postalCode": "1234 AB",
+      "city": "Amsterdam"
+    },
+    "idDocument": {
+      "idDocumentType": "passport",
+      "idDocumentNumber": "XX0000000",
+      "idIssueDate": "2020-01-01",
+      "idExpirationDate": "2030-01-01",
+      "idIssueCountry": "Netherlands",
+      "cityOfBirth": "Utrecht"
+    },
+    "workSituation": {
+      "workSituation": "employed",
+      "workMonthlySalary": 4900
+    },
+    "employment": {
+      "employerName": "Voorbeeld B.V.",
+      "workJobTitle": "Engineer",
+      "employerContactName": "Piet Voorbeeld",
+      "employerPhoneNumber": "+31201234567"
+    },
+    "financialSituation": {
+      "financialSavings": 0,
+      "financialCredits": 0,
+      "bankName": null,
+      "bankAccount": "NL00BANK0123456789",
+      "otherBankName": null,
+      "otherBankAccount": null,
+      "annualIncomeYear": null,
+      "annualIncome": 0
+    }
+  },
+  "partnerSituation": false,
+  "partner": null,
+  "currentHousingSituation": "alone",
+  "familyComposition": "single_without_children",
+  "maritalState": "single"
+}

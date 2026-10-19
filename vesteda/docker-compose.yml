@@ -1,0 +1,14 @@
+# Build the jar first (./gradlew clean build --parallel, from the repository root) and fill in .env (see .env.example).
+services:
+  vesteda-crawler:
+    build: .
+    env_file: .env
+    ports:
+      # Reachable from this machine only: serve it to the world through a proxy with HTTPS.
+      - "127.0.0.1:8120:8120"
+    volumes:
+      - vesteda-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  vesteda-data:

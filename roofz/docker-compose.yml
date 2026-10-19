@@ -1,0 +1,16 @@
+# Build the jar first (./gradlew clean build --parallel, from the repository root) and fill in .env (see .env.example).
+services:
+  roofz-crawler:
+    build: .
+    env_file: .env
+    ports:
+      # Reachable from this machine only: serve it to the world through a proxy with HTTPS.
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - roofz-data:/app/data
+      # Optional: the application profile file (ROOFZ_APPLICANT_PROFILE=/app/applicant-profile.json).
+      #- ./applicant-profile.json:/app/applicant-profile.json:ro
+    restart: unless-stopped
+
+volumes:
+  roofz-data:

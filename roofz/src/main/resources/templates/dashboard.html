@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Roofz Crawler</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+    <main class="container">
+      <h1>Dashboard</h1>
+
+      <div th:if="${success}" class="toast success" data-timeout="2000" role="status" th:text="${success}"></div>
+      <div th:if="${error}" class="toast error" data-timeout="3000" role="alert" th:text="${error}"></div>
+
+      <!-- At-a-glance counts: what's tracked, what fits your filters, what's been applied to. -->
+      <div class="rz-strip">
+        <div><span class="v" th:text="${listings.size()}">0</span><span class="l">Listings</span></div>
+        <div><span class="v" th:text="${matchingIds.size()}">0</span><span class="l">Matches</span></div>
+        <div><span class="v" th:text="${#lists.size(listings.?[applicationStatus == 'APPLIED'])}">0</span><span class="l">Applied</span></div>
+      </div>
+
+      <!-- Sorting is done client-side (see app.js) so it's instant — no page reload. -->
+      <div class="rz-sort" id="listing-sort">
+        <span class="lbl">Sort</span>
+        <button type="button" data-sort="match" data-dir="desc" class="on">Match</button>
+        <button type="button" data-sort="seen" data-dir="desc">Newest</button>
+        <button type="button" data-sort="price" data-dir="asc">Price</button>
+        <button type="button" data-sort="area" data-dir="desc">Area</button>
+        <button type="button" data-sort="applied" data-dir="desc">Applied</button>
+      </div>
+
+      <p th:if="${#lists.isEmpty(listings)}" class="rz-card" style="text-align:center; color: var(--pico-muted-color);">
+        No listings yet. They appear here as soon as the crawler finds them.
+      </p>
+
+      <div class="listing-list">
+        <article class="rz-card listing-card" th:each="listing : ${listings}"
+                 th:attr="data-match=${matchingIds.contains(listing.id) ? 1 : 0},
+                          data-price=${listing.price != null ? listing.price : 0},
+                          data-area=${listing.livingArea != null ? listing.livingArea : 0},
+                          data-seen=${listing.firstSeenAt},
+                          data-applied=${listing.applicationStatus == 'APPLIED' ? 1 : 0}">
+          <div class="lc-head">
+            <a class="lc-title" th:href="'https://roofz.eu/huur/woningen/' + ${listing.slug}"
+               target="_blank" th:text="${listing.title}">Title</a>
+            <span class="badge" th:classappend="'badge-' + ${listing.stage}" th:text="${listing.stage}">status</span>
+          </div>
+          <div class="lc-sub">
+            <span class="price" th:if="${listing.price != null}" th:text="'€' + ${listing.price} + '/mo'">€0</span>
+            <span th:if="${listing.livingArea != null}" th:text="${listing.livingArea} + ' m²'">0 m²</span>
+            <span th:if="${listing.availableAt != null}">avail
+              <time th:datetime="${listing.availableAt}" data-fmt="date" th:text="${listing.availableAt}"></time>
+            </span>
+            <span class="lc-match" th:if="${matchingIds.contains(listing.id)}">MATCH</span>
+          </div>
+          <div th:if="${progress.containsKey(listing.id)}">
+            <span class="progress">
+              <span th:each="s : ${progress.get(listing.id)}" class="dot"
+                    th:classappend="${'dot-' + s.state}" th:title="${s.label + ' — ' + s.detail}"></span>
+            </span>
+          </div>
+          <div class="lc-foot">
+            <span>Seen
+              <time th:datetime="${listing.firstSeenAt}" data-fmt="relative" th:text="${listing.firstSeenAt}"></time>
+              <span th:if="${listing.applicationStatus != null}"> · <strong th:text="${listing.applicationStatus}"></strong></span>
+            </span>
+            <span class="lc-foot-right">
+              <!-- One tap to the location. The plain maps.google URL opens the Google Maps app on
+                   a phone and the website on a laptop, so we need no coordinates of our own. -->
+              <a class="lc-map" target="_blank" rel="noopener"
+                 th:href="'https://www.google.com/maps/search/?api=1&amp;query=' + ${#uris.escapeQueryParam(listing.title + ' ' + listing.city)}"
+                 aria-label="Open location in Google Maps">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+              </a>
+              <svg class="sparkline" th:attr="data-series=${inquirySeries.get(listing.id)}, data-title=${listing.title}"></svg>
+            </span>
+          </div>
+        </article>
+      </div>
+
+      <p class="progress-legend" th:unless="${#lists.isEmpty(listings)}">
+        <strong>Progress</strong> (tap a dot for details): <em>Applied · Invite · Pre-application · Full application</em> —
+        <span class="dot dot-done"></span> done ·
+        <span class="dot dot-active"></span> in progress ·
+        <span class="dot dot-pending"></span> not reached ·
+        <span class="dot dot-failed"></span> stalled.
+      </p>
+
+      <dialog id="inquiry-detail">
+        <article>
+          <header>
+            <strong id="inquiry-detail-title">Inquiries</strong>
+            <button id="inquiry-detail-close" type="button" class="secondary outline"
+                    aria-label="Close" style="margin: 0; padding: 0.15rem 0.6rem; line-height: 1;">&#10005;</button>
+          </header>
+          <div id="inquiry-detail-chart" class="detail-chart"></div>
+          <p id="inquiry-detail-summary" style="margin: 0.75rem 0 0; color: var(--pico-muted-color); font-size: 0.85rem;"></p>
+        </article>
+      </dialog>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

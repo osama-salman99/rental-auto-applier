@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <!-- Same header as the roofz console: a slim brand bar whose nav becomes a bottom tab bar on a
+         phone. Both are operations panels for the same job, so neither should have to be relearned. -->
+    <header th:fragment="appHeader" class="app-header">
+      <div class="container app-header-inner">
+        <a class="app-brand" href="/">
+          <svg class="app-brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"
+               fill="currentColor" fill-rule="evenodd" aria-hidden="true">
+            <path d="M12 8 H52 V60 H12 Z
+                     M17 14 H23 V20 H17 Z M29 14 H35 V20 H29 Z M41 14 H47 V20 H41 Z
+                     M17 24 H23 V30 H17 Z M29 24 H35 V30 H29 Z M41 24 H47 V30 H41 Z
+                     M17 34 H23 V40 H17 Z M29 34 H35 V40 H29 Z M41 34 H47 V40 H41 Z
+                     M29 46 H35 V60 H29 Z" />
+          </svg>
+          <span>Ik Wil Huren</span>
+        </a>
+        <nav class="app-nav" aria-label="Primary">
+          <a href="/" th:attr="aria-current=${currentPath == '/'} ? 'page' : null">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 10.5 12 4l9 6.5"/><path d="M5.5 9.8V20h13V9.8"/>
+            </svg><span>Home</span>
+          </a>
+          <a href="/listings" th:attr="aria-current=${currentPath == '/listings'} ? 'page' : null">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg><span>Homes</span>
+          </a>
+          <a href="/application" th:attr="aria-current=${currentPath == '/application'} ? 'page' : null">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>
+              <path d="M9 13h6M9 17h4"/>
+            </svg><span>Apply</span>
+          </a>
+          <a href="/stats" th:attr="aria-current=${currentPath == '/stats'} ? 'page' : null">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 20v-6M12 20V5M18 20v-9"/>
+            </svg><span>Stats</span>
+          </a>
+          <a href="/config" th:attr="aria-current=${currentPath == '/config'} ? 'page' : null">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33
+                       1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06
+                       a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+                       A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06
+                       A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51
+                       1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9
+                       1.65 1.65 0 0 0 21 10h.09a2 2 0 0 1 0 4H21a1.65 1.65 0 0 0-1.6 1z"/>
+            </svg><span>Settings</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+  </body>
+</html>

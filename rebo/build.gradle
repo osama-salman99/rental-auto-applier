@@ -1,0 +1,38 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+}
+
+group = 'eu.rebo'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':crawler-core')
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    runtimeOnly 'com.h2database:h2'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+
+    // CI runs on x86_64, where the JVM's default thread stack is 1MB; this workspace and the VPS are
+    // ARM64, where it is 2MB. A stack-hungry bug (a bulk delete that built one OR term per row, deep
+    // enough to overflow the HQL parser) passed locally and only failed on CI. Pin the test JVM to the
+    // smaller budget so the local build sees what CI sees.
+    jvmArgs '-Xss1m'
+}

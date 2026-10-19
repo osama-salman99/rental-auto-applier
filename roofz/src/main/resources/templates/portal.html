@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Portal Applications — Roofz Crawler</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+    <!-- Resolve the CSRF token here (in the head) so the session is created before the large page body
+         flushes and commits the response — otherwise the th:action forms below throw mid-render. -->
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}" />
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+    <main class="container">
+      <div class="page-head">
+        <h1>Portal Applications</h1>
+        <div class="page-actions">
+          <form method="post" th:action="@{/test-portal-pipeline}">
+            <button type="submit" class="secondary">Run pipeline now</button>
+          </form>
+          <a href="/config" role="button" class="outline">Configure</a>
+        </div>
+      </div>
+
+      <div th:if="${success}" class="toast success" data-timeout="2000" role="status" th:text="${success}"></div>
+      <div th:if="${error}" class="toast error" data-timeout="3000" role="alert" th:text="${error}"></div>
+
+      <div class="chip-row">
+        <span class="chip chip-dot" th:classappend="${pipelineEnabled} ? 'ok' : 'bad'"
+              th:text="${pipelineEnabled} ? 'Pipeline on' : 'Pipeline off'">Pipeline</span>
+        <span class="chip chip-dot" th:classappend="${dryRun} ? 'warn' : 'ok'"
+              th:text="${dryRun} ? 'Dry-run' : 'Live'">Mode</span>
+        <span class="chip chip-dot" th:classappend="${portalConfigured} ? 'ok' : 'bad'"
+              th:text="${portalConfigured} ? 'Portal connected' : 'Portal not set up'">Portal</span>
+      </div>
+
+      <p class="rz-section-label">Your applications</p>
+      <p style="color: var(--pico-muted-color); margin-top: -0.3rem;"><small>
+        <strong th:text="${#lists.size(accountApplications)}">0</strong> in your ReletPortal account<span
+          th:if="${awaitingDecision > 0}"> · <strong th:text="${awaitingDecision}"></strong> awaiting a decision</span><span
+          th:if="${actionNeeded > 0}" style="color:#8a6000;"> · <strong th:text="${actionNeeded}"></strong> need your action</span><span
+          th:if="${offersOpen > 0}" style="color:#157a3a; font-weight:700;"> · <strong th:text="${offersOpen}"></strong> offer awaiting your response 🎉</span>.
+      </small></p>
+
+      <p th:if="${accountError != null}" class="rz-card"
+         style="background: rgba(230,161,0,0.12); border-color: rgba(230,161,0,0.45);">
+        <small>Couldn't reach ReletPortal just now: <span th:text="${accountError}"></span></small>
+      </p>
+
+      <p th:if="${#lists.isEmpty(accountApplications)}" class="rz-card" style="color: var(--pico-muted-color);">
+        <em th:text="${portalConfigured} ? 'No applications yet — they appear here the moment a pre-application is submitted.' : 'ReletPortal not configured.'">—</em>
+      </p>
+      <div class="rz-cards" th:unless="${#lists.isEmpty(accountApplications)}">
+        <div class="rz-card portal-app" th:each="a : ${accountApplications}">
+          <div class="lc-head">
+            <div style="min-width:0;">
+              <strong class="lc-title" th:text="${a.residence}">Residence</strong>
+              <div class="pa-city" th:if="${a.city != ''}" th:text="${a.city}">City</div>
+            </div>
+            <span class="rz-badge" th:classappend="'rz-badge-' + ${a.badge}" th:text="${a.statusLabel}">status</span>
+          </div>
+
+          <div class="funnel">
+            <div class="funnel-step" th:each="s : ${a.funnel}" th:classappend="${s.state}">
+              <div class="fdot"></div>
+              <div class="flabel" th:text="${s.label}">step</div>
+            </div>
+          </div>
+
+          <div class="pa-offer" th:if="${a.offered}">
+            <a class="pa-offer-btn" role="button" target="_blank"
+               th:href="${a.offerLink != ''} ? ${a.offerLink} : ('https://roofz.onosre.com/application/' + ${a.applicationId} + '/manual')"
+              >Respond to offer ↗</a>
+            <span class="pa-offer-note">🎉 Allocated to you — accept or decline within 24h</span>
+          </div>
+
+          <p class="pa-next" th:if="${a.statusNext != '' and !a.offered}">
+            <span class="pa-arrow">→</span> <span th:text="${a.statusNext}">next</span>
+          </p>
+
+          <div class="lc-foot">
+            <span>Applied
+              <time th:if="${a.appliedAt != ''}" th:datetime="${a.appliedAt}" data-fmt="relative" th:text="${a.appliedAt}"></time>
+              <span th:if="${a.pipeline != ''}"> · automation: <strong th:text="${a.pipeline}"></strong></span>
+            </span>
+            <a th:if="${a.applicationId != ''}"
+               th:href="'https://roofz.onosre.com/application/' + ${a.applicationId} + '/manual'"
+               target="_blank">Open ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Automation's own working set — only shown when it's driving something, so the page isn't
+           cluttered with an empty "tracked" table when nothing is mid-flight. -->
+      <details th:if="${not #lists.isEmpty(applications)}" style="margin-top: 1.5rem;">
+        <summary><strong>Automation pipeline</strong> <small>(invitations we're actively driving)</small></summary>
+        <div style="overflow-x: auto; margin-top: 0.75rem;">
+          <table>
+            <thead>
+              <tr>
+                <th>Residence</th>
+                <th>State</th>
+                <th>Portal status</th>
+                <th>Application</th>
+                <th>Updated</th>
+                <th>Last error</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="a : ${applications}">
+                <td th:text="${a.residenceAddress} ?: '—'">—</td>
+                <td><strong th:text="${a.state}">—</strong></td>
+                <td th:text="${a.portalStatus} ?: '—'">—</td>
+                <td>
+                  <a th:if="${a.applicationId}"
+                     th:href="'https://roofz.onosre.com/application/' + ${a.applicationId} + '/manual'"
+                     th:text="${a.applicationId}" target="_blank">—</a>
+                  <span th:unless="${a.applicationId}" th:text="'inv ' + ${a.invitationId}">—</span>
+                </td>
+                <td th:text="${a.updatedAt}">—</td>
+                <td><small th:text="${a.lastError} ?: ''"></small></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

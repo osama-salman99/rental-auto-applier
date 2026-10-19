@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Apply — Ik Wil Huren</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+
+    <main class="container">
+      <h1>Your application</h1>
+      <p style="color: var(--pico-muted-color); line-height:1.55; max-width:40rem;">
+        What gets sent to MVGM every time a viewing is requested for you. Leave anything blank and
+        your ikwilhuren.nu profile's own answer is used — each field shows what that is.
+      </p>
+
+      <div th:if="${success}" class="rz-card" role="status"
+           style="margin-bottom:1rem; border-left:3px solid var(--rz-ok);" th:text="${success}"></div>
+
+      <form method="post" th:action="@{/application}">
+        <fieldset th:each="group : ${groups}">
+          <legend th:text="${group.title}">Group</legend>
+          <p style="color: var(--pico-muted-color); font-size:0.86rem; line-height:1.5; margin:0 0 1rem;"
+             th:text="${group.blurb}">What this is for.</p>
+
+          <div class="grid-filters">
+            <label th:each="a : ${group.answers}" th:for="${a.field}">
+              <span th:text="${a.label}">Label</span>
+
+              <select th:if="${a.choice}" th:id="${a.field}" th:name="${a.field}">
+                <option value="" th:selected="${answers[a.field] == ''}"
+                        th:text="${profile[a.field] != null} ? 'Keep: ' + ${profile[a.field]} : 'Keep whatever my profile says'">Keep whatever my profile says</option>
+                <option th:each="opt : ${a.options}"
+                        th:value="${opt.key}" th:text="${opt.value}"
+                        th:selected="${answers[a.field] == opt.key}"></option>
+              </select>
+
+              <input th:unless="${a.choice}"
+                     th:id="${a.field}" th:name="${a.field}"
+                     th:type="${a.numeric} ? 'number' : 'text'"
+                     th:value="${answers[a.field]}"
+                     maxlength="450"
+                     th:placeholder="${profile[a.field] != null} ? 'Keep: ' + ${profile[a.field]} : 'Keep whatever my profile says'"
+                     placeholder="Keep whatever my profile says" />
+
+              <small th:if="${a.help != null}" th:text="${a.help}"></small>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>What we never touch</legend>
+          <p style="color: var(--pico-muted-color); font-size:0.86rem; line-height:1.55; margin:0 0 0.75rem;">
+            Your name, date of birth, address, phone number and your uploaded employer statement come
+            straight from ikwilhuren.nu and are sent back exactly as they are. Change those there.
+          </p>
+          <p style="color: var(--pico-muted-color); font-size:0.86rem; line-height:1.55; margin:0;">
+            Worth knowing: MVGM treats the request form as the master copy, so an answer set here is
+            also saved to your profile once a request goes in. It sticks.
+          </p>
+        </fieldset>
+
+        <div class="save-bar">
+          <button type="submit">Save answers</button>
+        </div>
+      </form>
+      <div class="save-bar-spacer"></div>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

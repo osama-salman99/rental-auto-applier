@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Documents — Roofz Crawler</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+    <main class="container">
+      <h1>Applicant Documents</h1>
+
+      <div th:if="${message}" class="toast success" data-timeout="2000" role="status" th:text="${message}"></div>
+      <div th:if="${error}" class="toast error" data-timeout="3000" role="alert" th:text="${error}"></div>
+
+      <p style="color: var(--pico-muted-color); margin-top: -0.25rem;">
+        <small>
+          Files and details reused on every full application (the portal can't re-download them).
+          Payslips &amp; bank statements attach the <strong th:text="${monthsWindow}">3</strong> most recent months.
+          Auto-upload <strong th:text="${autoUpload} ? 'on' : 'off'">off</strong> ·
+          auto-submit <strong th:text="${autoFinalize} ? 'on' : 'off'">off</strong>.
+        </small>
+      </p>
+
+      <p class="rz-section-label">Upload a file</p>
+      <div class="rz-card">
+        <form method="post" action="/documents/upload" enctype="multipart/form-data">
+          <div class="grid-filters">
+            <label>
+              Type
+              <select name="docType" id="docType" required>
+                <option th:each="e : ${docTypeOptions}" th:value="${e.key}" th:text="${e.value}"></option>
+              </select>
+            </label>
+            <label id="monthField">
+              Month
+              <input type="month" name="documentMonth" id="documentMonth" />
+              <small>Which month this payslip / bank statement covers.</small>
+            </label>
+          </div>
+          <label>
+            File
+            <input type="file" name="file" id="file" required />
+          </label>
+          <button type="submit">Upload</button>
+        </form>
+      </div>
+
+      <p class="rz-section-label">Stored documents</p>
+      <p th:if="${documents.isEmpty()}" class="rz-card" style="color: var(--pico-muted-color);">
+        <em>No documents yet. Add your ID, payslips, employer statement, and bank statements above.</em>
+      </p>
+      <div th:unless="${documents.isEmpty()}" class="rz-cards">
+        <div class="rz-card doc-row" th:each="d : ${documents}">
+          <div class="doc-row-main">
+            <span class="rz-badge rz-badge-muted" th:text="${docTypeLabels.getOrDefault(d.docType, d.docType)}">type</span>
+            <span class="doc-file" th:text="${d.fileName}">file</span>
+          </div>
+          <div class="doc-row-meta">
+            <span th:if="${d.documentDate != null}" th:text="${#temporals.format(d.documentDate, 'yyyy-MM')}">month</span>
+            <span th:text="${#numbers.formatDecimal(d.sizeBytes / 1024.0, 0, 0)} + ' KB'">size</span>
+            <span th:text="${#temporals.format(d.uploadedAt, 'dd MMM HH:mm')}">uploaded</span>
+            <form th:action="@{'/documents/delete/' + ${d.id}}" method="post" onsubmit="return confirm('Delete this document?');">
+              <button type="submit" class="outline danger-btn" style="margin:0;padding:0.2rem 0.6rem;white-space:nowrap;">Delete</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <p class="rz-section-label">Attached next time</p>
+      <div class="rz-card">
+        <p style="margin:0 0 0.4rem;"><small>With a <strong th:text="${monthsWindow}">3</strong>-month window, these attach on the next application:</small></p>
+        <ul style="margin:0; padding-left: 1.1rem;">
+          <li th:each="s : ${selected}">
+            <span th:text="${docTypeLabels.getOrDefault(s.docType, s.docType)}">type</span> —
+            <span th:text="${s.fileName}">file</span>
+            <span th:if="${s.documentDate != null}" style="color: var(--pico-muted-color);"
+                  th:text="'(' + ${#temporals.format(s.documentDate, 'yyyy-MM')} + ')'">(month)</span>
+          </li>
+          <li th:if="${selected.isEmpty()}"><em>nothing selected yet</em></li>
+        </ul>
+      </div>
+
+      <!-- Full-application questionnaire — everything we submit, grouped and editable. -->
+      <h2 style="margin-top: 2rem;">Full application details</h2>
+      <p style="color: var(--pico-muted-color); margin-top:-0.25rem;">
+        <small>Exactly what gets filled in on every full application. Edit anything and save.</small>
+      </p>
+      <form method="post" th:action="@{/documents/profile}">
+        <div th:each="section : ${profileSections}">
+          <p class="rz-section-label" th:text="${section.key}">Section</p>
+          <div class="rz-card">
+            <div class="grid-filters">
+              <label th:each="f : ${section.value}">
+                <span th:text="${f.label}">Label</span>
+                <input th:if="${f.type == 'checkbox'}" type="checkbox" role="switch"
+                       th:name="${f.name}" value="true" th:checked="${f.value == 'true'}" />
+                <input th:unless="${f.type == 'checkbox'}" th:type="${f.type}"
+                       th:name="${f.name}" th:value="${f.value}" />
+              </label>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 1rem;">
+          <button type="submit">Save application details</button>
+        </div>
+      </form>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

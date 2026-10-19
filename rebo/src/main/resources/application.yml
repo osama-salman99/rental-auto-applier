@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: rebo-crawler
+  datasource:
+    # TRACE_LEVEL_FILE=0 stops H2 writing an unbounded trace file (a recurring error once produced
+    # tens of MB); DB_CLOSE_ON_EXIT=FALSE lets Spring own the lifecycle.
+    url: jdbc:h2:file:./data/rebo-db;TRACE_LEVEL_FILE=0;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  task:
+    scheduling:
+      # The default scheduler pool is a single thread shared by every @Scheduled method. Auto-apply
+      # makes slow HTTP calls; give it room so it cannot delay the crawl or the log pruner.
+      pool:
+        size: 3
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+  h2:
+    console:
+      enabled: false
+
+server:
+  port: 8130
+  address: 127.0.0.1
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      tracking-modes: cookie
+      timeout: 1d
+  tomcat:
+    accesslog:
+      enabled: true
+      directory: /opt/rebo-crawler/logs
+      pattern: "%{yyyy-MM-dd HH:mm:ss}t | %a | %r | %s | %Tms"
+
+crawler:
+  # One crawl_log row is written per pass and every stats aggregate scans the table, so letting it
+  # grow forever eventually pins the heap (roofz reached 475k rows). Rows past this window are folded
+  # into the lifetime rollup and deleted — /stats totals stay exact, only per-pass detail ages out.
+  # Set to 0 to disable pruning.
+  crawl-log-retention-days: 14
+  app:
+    display-name: "REBO"
+  security:
+    csrf-ignore-patterns: "/listings/*/applied"
+
+app:
+  admin:
+    # The name the login wall gives whoever is signed in. The password is checked only by the login
+    # service (osmosis-auth); this crawler just verifies the signed cookie it sets.
+    username: "${ADMIN_USERNAME:osmosis}"
+
+management:
+  server:
+    port: 8131
+    address: 127.0.0.1
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    eu.rebo.crawler: INFO

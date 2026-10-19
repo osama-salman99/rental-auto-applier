@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vesteda</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+    <!-- Restriction chips + detail-page facts on each console card. Vesteda-specific, so styled here
+         rather than in the shared core sheet. -->
+    <style>
+      .lc-restrict { display: flex; flex-wrap: wrap; gap: 0.25rem; margin: 0.15rem 0; }
+      .rchip { font-size: 0.68rem; font-weight: 600; padding: 1px 7px; border-radius: 999px;
+        white-space: nowrap; background: rgba(230, 161, 0, 0.16); color: #8a6000; }
+      .lc-extra { display: flex; flex-wrap: wrap; gap: 0.15rem 0.6rem; margin: 0.1rem 0 0.15rem;
+        font-size: 0.8rem; color: var(--pico-muted-color, #6b7280); }
+      .lc-extra .elabel { font-weight: 600; }
+      @media (prefers-color-scheme: dark) { .rchip { background: rgba(230, 161, 0, 0.2); color: #e6ba55; } }
+      :root[data-theme="dark"] .rchip { background: rgba(230, 161, 0, 0.2); color: #e6ba55; }
+      :root[data-theme="light"] .rchip { background: rgba(230, 161, 0, 0.16); color: #8a6000; }
+    </style>
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+
+    <main class="container">
+      <!-- The five viewing requests Vesteda lets you hold. Everything else is downstream of this. -->
+      <section class="rz-card">
+        <div class="slot-head">
+          <h2>Viewing requests</h2>
+          <span class="slot-count" th:text="${slotsUsed} + ' / ' + ${slotCap}">0 / 5</span>
+        </div>
+        <div class="slot-row" role="img"
+             th:attr="aria-label=${slotsUsed} + ' of ' + ${slotCap} + ' viewing requests in progress'">
+          <span th:each="i : ${#numbers.sequence(1, slotCap)}"
+                class="slot-pip" th:classappend="${i <= slotsUsed} ? 'filled' : ''"></span>
+        </div>
+        <p class="slot-note" th:if="${slotsUsed >= slotCap}">
+          All <span th:text="${slotCap}">5</span> are working. When a better home appears, the weakest
+          is traded in for it automatically.
+        </p>
+        <p class="slot-note" th:if="${slotsUsed > 0 and slotsUsed < slotCap}">
+          <span th:text="${slotCap - slotsUsed}">2</span> still free — they'll fill as soon as there's
+          a home worth applying for.
+        </p>
+        <p class="slot-note" th:if="${slotsUsed == 0}">
+          Nothing applied for yet. Every home is scored, and the best
+          <span th:text="${slotCap}">5</span> you could actually be allocated get applied for
+          automatically.
+        </p>
+      </section>
+
+      <div class="chip-row" style="margin-top:1rem;">
+        <span class="chip bad" th:unless="${config.autoApplyEnabled}">Auto-apply off</span>
+        <span class="chip warn" th:if="${config.autoApplyEnabled and config.autoApplyDryRun}">Dry run</span>
+        <span class="chip bad" th:unless="${credentialsSet}">No login configured</span>
+        <span class="chip ok chip-dot"
+              th:if="${config.autoApplyEnabled and !config.autoApplyDryRun and credentialsSet}">Watching</span>
+        <span class="chip" th:if="${config.strictRentCeiling != null}"
+              th:text="'Up to €' + ${config.strictRentCeiling}">Up to €1400</span>
+        <span class="chip" th:text="${config.targetCity}">Amsterdam</span>
+      </div>
+
+      <!-- Anything that needs a human. Rare, and worth seeing first when it happens. -->
+      <div th:if="${!#lists.isEmpty(needsYou)}">
+        <p class="rz-section-label">Needs you</p>
+        <div class="listing-list">
+          <th:block th:each="v : ${needsYou}">
+            <div th:replace="~{fragments/listing :: listingCard(${v})}"></div>
+          </th:block>
+        </div>
+      </div>
+
+      <p class="rz-section-label" th:if="${!#lists.isEmpty(inDraw)}">In the draw</p>
+      <div class="listing-list" th:if="${!#lists.isEmpty(inDraw)}">
+        <th:block th:each="v : ${inDraw}">
+          <div th:replace="~{fragments/listing :: listingCard(${v})}"></div>
+        </th:block>
+      </div>
+
+      <p class="rz-section-label" th:if="${!#lists.isEmpty(next)}">Next in line</p>
+      <div class="listing-list" th:if="${!#lists.isEmpty(next)}">
+        <th:block th:each="v : ${next}">
+          <div th:replace="~{fragments/listing :: listingCard(${v})}"></div>
+        </th:block>
+      </div>
+
+      <div class="rz-card" th:if="${#lists.isEmpty(inDraw) and #lists.isEmpty(next)}"
+           style="color: var(--pico-muted-color); line-height:1.55;">
+        <strong>No homes you could be allocated right now.</strong><br />
+        Everything listed is beyond what your income allows, or already gone. The portal is checked
+        every 45 seconds — you'll get a notification the moment that changes.
+      </div>
+
+      <!-- What the number on each card means. It decides which five homes you hold, so it should
+           never be a mystery. -->
+      <details class="rz-card scoring" th:if="${!#lists.isEmpty(inDraw) or !#lists.isEmpty(next)}">
+        <summary>What the score means</summary>
+        <p>
+          Every home gets a score out of 100, and your
+          <span th:text="${slotCap}">5</span> requests are always held by the highest scorers. When a
+          better home appears, the weakest is traded in for it.
+        </p>
+        <dl class="scoring-parts">
+          <dt>Can it still be won<span>0–55</span></dt>
+          <dd>
+            By far the biggest part — and on Vesteda it comes down to age. The portal won't tell you
+            a home is full until you've already applied, and in this budget every affordable home
+            carries the "many requests" warning, so that warning can't tell them apart. What can is
+            how new a home is: an older one is, in practice, already full. So a freshly listed home
+            scores high (the moment it can still be won), a home we hold that came back a reserve is
+            kept but ranked low, and an old "for rent" home is treated as most likely full — worth a
+            slot only if one is otherwise sitting idle.
+          </dd>
+
+          <dt>How fresh<span>0–25</span></dt>
+          <dd>
+            Within that, the newest homes rank first — a home listed an hour ago over one listed
+            yesterday. Measured from when we first saw it, never Vesteda's own "new" badge, which is
+            stamped identically on every listing.
+          </dd>
+
+          <dt>How good a home<span>0–20</span></dt>
+          <dd>
+            Space, then room under your rent ceiling, then a second bedroom. This only separates
+            homes you could actually get — it never lets an old, likely-full home jump one you hold.
+          </dd>
+        </dl>
+        <p class="scoring-foot">
+          Tap a score to see the reasons behind that particular home.
+        </p>
+      </details>
+
+      <!-- The running commentary. The allocator swaps requests around on its own, so from outside it
+           is just five addresses that quietly change. This says what moved, when, and why. -->
+      <p class="rz-section-label" th:if="${!#lists.isEmpty(moves)}">Recent moves</p>
+      <div class="rz-card moves" th:if="${!#lists.isEmpty(moves)}">
+        <div class="move" th:each="m : ${moves}" th:classappend="${m.applied} ? 'in' : 'out'">
+          <span class="move-arrow" th:text="${m.applied} ? '↑' : '↓'">↑</span>
+          <div class="move-body">
+            <div class="move-head">
+              <span class="move-title" th:text="${m.title}">Address</span>
+              <span class="move-score" th:if="${m.score != null}" th:text="${m.score}">55</span>
+            </div>
+            <div class="move-meta">
+              <span th:if="${m.price != null}" th:text="'€' + ${m.price}">€1300</span>
+              <span th:text="${m.applied} ? 'applied' : 'withdrawn'">applied</span>
+              <time th:datetime="${m.at}" data-fmt="relative" th:text="${m.at}"></time>
+            </div>
+            <p class="move-why" th:if="${m.reason != null}" th:text="${m.reason}">why</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- The hundreds we can never apply for, counted rather than listed. -->
+      <p class="rz-section-label" th:if="${!ruledOut.isEmpty()}">Not applying for</p>
+      <div class="rz-card tally" th:if="${!ruledOut.isEmpty()}">
+        <div class="tally-row" th:each="e : ${ruledOut}">
+          <span th:text="${e.key}">Outside Amsterdam</span>
+          <span class="tally-n" th:text="${e.value}">780</span>
+        </div>
+        <a class="tally-all" href="/listings">
+          Browse all <span th:text="${totalCount}">460</span> homes →
+        </a>
+      </div>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

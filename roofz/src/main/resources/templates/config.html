@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Configurations — Roofz Crawler</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+    <main class="container">
+      <h1>Configurations</h1>
+
+      <div th:if="${success}" class="toast success" data-timeout="2000" role="status" th:text="${success}"></div>
+      <div th:if="${error}" class="toast error" data-timeout="3000" role="alert" th:text="${error}"></div>
+
+      <form method="post" th:action="@{/config}">
+        <div class="grid-filters">
+          <label>
+            Min Square Meters
+            <input type="number" name="minSquareMeters" th:value="${config.minSquareMeters}" min="0" />
+          </label>
+          <label>
+            Min Bedrooms
+            <input type="number" name="minBedrooms" th:value="${config.minBedrooms}" min="0" placeholder="Any" />
+          </label>
+          <label>
+            Max Price (&euro;/mo)
+            <input type="number" name="maxPrice" th:value="${config.maxPrice}" min="0" placeholder="Any" />
+          </label>
+          <label>
+            Poll Interval (s)
+            <input type="number" name="pollIntervalSeconds" th:value="${config.pollIntervalSeconds}" min="1" />
+          </label>
+          <label>
+            City
+            <select name="targetCity">
+              <option value="" th:selected="${config.targetCity == null or config.targetCity == ''}">All cities</option>
+              <option value="Amsterdam" th:selected="${config.targetCity == 'Amsterdam'}">Amsterdam</option>
+              <option value="Rotterdam" th:selected="${config.targetCity == 'Rotterdam'}">Rotterdam</option>
+              <option value="Eindhoven" th:selected="${config.targetCity == 'Eindhoven'}">Eindhoven</option>
+              <option value="Maastricht" th:selected="${config.targetCity == 'Maastricht'}">Maastricht</option>
+              <option value="Almere" th:selected="${config.targetCity == 'Almere'}">Almere</option>
+            </select>
+          </label>
+        </div>
+        <div class="switch-group" style="margin-top: 1rem;">
+          <label>
+            <input type="hidden" name="_onlyAvailable" value="on" />
+            <input type="checkbox" name="onlyAvailable" th:checked="${config.onlyAvailable}" value="true" role="switch" />
+            Only available listings
+          </label>
+          <label>
+            <input type="hidden" name="_notificationsEnabled" value="on" />
+            <input type="checkbox" name="notificationsEnabled" th:checked="${config.notificationsEnabled}" value="true" role="switch" />
+            Notifications enabled
+          </label>
+          <label>
+            <input type="hidden" name="_autoApplyEnabled" value="on" />
+            <input type="checkbox" name="autoApplyEnabled" th:checked="${config.autoApplyEnabled}" value="true" role="switch" />
+            Auto-apply on new matches
+          </label>
+        </div>
+        <p class="rz-section-label" style="margin-top: 1.5rem;">Applicant Details</p>
+        <div class="rz-card">
+          <div class="grid-filters">
+            <label>
+              First name
+              <input type="text" name="applicantFirstName" th:value="${config.applicantFirstName}" />
+            </label>
+            <label>
+              Last name
+              <input type="text" name="applicantLastName" th:value="${config.applicantLastName}" />
+            </label>
+            <label>
+              Email
+              <input type="email" name="applicantEmail" th:value="${config.applicantEmail}" />
+            </label>
+            <label>
+              Phone
+              <input type="text" name="applicantPhone" th:value="${config.applicantPhone}" />
+            </label>
+          </div>
+          <!-- Cap width to ~two grid fields (2 × minmax(200px) + 1rem gap) so it doesn't stretch full-width on desktop. -->
+          <label style="margin-top: 0.5rem; max-width: 26rem;">
+            Message (optional)
+            <textarea name="applicantMessage" rows="4" maxlength="1000"
+                      placeholder="Optional cover message sent with each application (max 1000 characters)."
+                      th:text="${config.applicantMessage}"></textarea>
+          </label>
+        </div>
+        <p class="rz-section-label" style="margin-top: 1.5rem;">ReletPortal Pipeline (roofz.onosre.com)</p>
+        <div class="rz-card">
+          <div class="switch-group">
+            <label>
+              <input type="hidden" name="_portalPipelineEnabled" value="on" />
+              <input type="checkbox" name="portalPipelineEnabled" th:checked="${config.portalPipelineEnabled}" value="true" role="switch" />
+              Pipeline enabled
+            </label>
+            <label>
+              <input type="hidden" name="_portalDryRun" value="on" />
+              <input type="checkbox" name="portalDryRun" th:checked="${config.portalDryRun}" value="true" role="switch" />
+              Dry-run (log payloads, never submit)
+            </label>
+            <label>
+              <input type="hidden" name="_portalAutoUploadDocuments" value="on" />
+              <input type="checkbox" name="portalAutoUploadDocuments" th:checked="${config.portalAutoUploadDocuments}" value="true" role="switch" />
+              Auto-upload documents (full app)
+            </label>
+            <label>
+              <input type="hidden" name="_portalAutoFinalize" value="on" />
+              <input type="checkbox" name="portalAutoFinalize" th:checked="${config.portalAutoFinalize}" value="true" role="switch" />
+              Auto-finalize / submit (irreversible)
+            </label>
+          </div>
+          <div class="grid-filters" style="margin-top: 1rem;">
+            <label>
+              Stage SLA (sec)
+              <input type="number" name="stageSlaSeconds" th:value="${config.stageSlaSeconds}" min="15" step="5" />
+              <small>Warn if apply→invite, pre-app→confirmation, or full→confirmation takes longer than this many seconds. Default 60; 30 is fine. Detection resolution is bounded by the poll interval (currently <span th:text="${config.pollIntervalSeconds}">10</span>s).</small>
+            </label>
+            <label>
+              Document months window
+              <input type="number" name="documentMonthsWindow" th:value="${config.documentMonthsWindow}" min="1" max="12" />
+              <small>How many of the most recent months of payslips &amp; bank statements to attach to each application (e.g. 3 = last 3 months of each).</small>
+            </label>
+          </div>
+        </div>
+        <p class="rz-section-label" style="margin-top: 1.5rem;">ntfy.sh Settings</p>
+        <div class="rz-card">
+          <div class="grid-filters">
+            <label>
+              Topic
+              <input type="text" name="ntfyTopic" th:value="${config.ntfyTopic}" placeholder="e.g. roofz-abc123" />
+            </label>
+            <label>
+              Server URL
+              <input type="url" name="ntfyServerUrl" th:value="${config.ntfyServerUrl}" placeholder="https://ntfy.sh" />
+            </label>
+          </div>
+        </div>
+        <div class="save-bar">
+          <button type="submit">Save Configurations</button>
+        </div>
+      </form>
+      <h2 style="margin-top: 2rem;">Actions</h2>
+
+      <div class="action-group">
+        <p class="action-group-label">Run</p>
+        <div class="action-grid">
+          <form method="post" th:action="@{/crawl-now}">
+            <button type="submit" class="secondary">Crawl Now</button>
+          </form>
+          <form method="post" th:action="@{/test-portal-pipeline}">
+            <button type="submit" class="secondary outline">Run Portal Pipeline</button>
+          </form>
+          <form method="post" th:action="@{/test-auto-apply}"
+                onsubmit="return confirm('Send a dummy test application to property 11616557? This hits the real Roofz endpoint.');">
+            <button type="submit" class="secondary outline">Test Auto-Apply</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="action-group">
+        <p class="action-group-label danger">Danger zone</p>
+        <div class="action-grid">
+          <form method="post" th:action="@{/clear-listings}"
+                onsubmit="return confirm('Clear all non-matching listings? Matches and applied entries are preserved.');">
+            <button type="submit" class="outline danger-btn">Clear Non-Matching</button>
+          </form>
+          <form method="post" th:action="@{/clear-all-listings}"
+                onsubmit="return confirm('Clear ALL listings? This cannot be undone.');">
+            <button type="submit" class="outline danger-btn">Clear All</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="action-group">
+        <p class="action-group-label">Session</p>
+        <form method="post" th:action="@{/logout}">
+          <button type="submit" class="outline" style="width: auto;">Logout</button>
+        </form>
+      </div>
+
+      <h2 style="margin-top: 2rem;">Replay Invitation Link</h2>
+      <p><small>Paste a Roofz pre-application invite link to register it manually
+        (useful for validating the first real invitation before enabling live mode).</small></p>
+      <form method="post" th:action="@{/replay-invitation}">
+        <div style="display: flex; gap: 0.5rem; align-items: start;">
+          <input type="text" name="link" placeholder="https://roofz.onosre.com/invitation/…/token/…"
+                 style="flex: 1 1 auto; min-width: 0; margin-bottom: 0;" required />
+          <button type="submit" class="secondary" style="flex: 0 0 auto; width: auto;">Register</button>
+        </div>
+      </form>
+      <!-- Clearance so the fixed Save bar never covers the last content. -->
+      <div class="save-bar-spacer" aria-hidden="true"></div>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

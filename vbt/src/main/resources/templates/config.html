@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Configurations — vb&t</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+    <main class="container">
+      <h1>Configurations</h1>
+
+      <div th:if="${success}" role="alert" style="padding: 1rem; background: #d4edda; border-radius: 8px; margin-bottom: 1rem;">
+        <span th:text="${success}"></span>
+      </div>
+      <div th:if="${error}" role="alert" style="padding: 1rem; background: #f8d7da; border-radius: 8px; margin-bottom: 1rem;">
+        <span th:text="${error}"></span>
+      </div>
+
+      <form method="post" th:action="@{/config}">
+        <div class="grid-filters">
+          <label>
+            Min Square Meters
+            <input type="number" name="minSquareMeters" th:value="${config.minSquareMeters}" min="0" />
+          </label>
+          <label>
+            Min Bedrooms
+            <input type="number" name="minBedrooms" th:value="${config.minBedrooms}" min="0" placeholder="Any" />
+          </label>
+          <label>
+            Max Price (&euro;/mo)
+            <input type="number" name="maxPrice" th:value="${config.maxPrice}" min="0" placeholder="Any" />
+          </label>
+          <label>
+            City
+            <input type="text" name="targetCity" th:value="${config.targetCity}" placeholder="Any" />
+          </label>
+        </div>
+        <div class="grid-filters" style="margin-top: 1rem;">
+          <label>
+            <input type="hidden" name="_onlyAvailable" value="on" />
+            <input type="checkbox" name="onlyAvailable" th:checked="${config.onlyAvailable}" value="true" role="switch" />
+            Only available listings
+          </label>
+          <label>
+            <input type="hidden" name="_notificationsEnabled" value="on" />
+            <input type="checkbox" name="notificationsEnabled" th:checked="${config.notificationsEnabled}" value="true" role="switch" />
+            Notifications enabled
+          </label>
+        </div>
+        <fieldset style="margin-top: 1rem;">
+          <legend><strong>ntfy.sh Settings</strong></legend>
+          <div class="grid-filters">
+            <label>
+              Topic
+              <input type="text" name="ntfyTopic" th:value="${config.ntfyTopic}" placeholder="e.g. vbt-abc123" />
+            </label>
+            <label>
+              Server URL
+              <input type="url" name="ntfyServerUrl" th:value="${config.ntfyServerUrl}" placeholder="https://ntfy.sh" />
+            </label>
+          </div>
+        </fieldset>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+          <button type="submit">Save Configuration</button>
+        </div>
+      </form>
+      <h2 style="margin-top: 2rem;">Actions</h2>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <form method="post" th:action="@{/crawl-now}">
+          <button type="submit" class="secondary">Crawl Now</button>
+        </form>
+        <form method="post" th:action="@{/clear-listings}"
+              onsubmit="return confirm('Clear all non-matching listings? Matches (and your applied checkboxes) are preserved.');">
+          <button type="submit" class="contrast outline">Clear Non-Matching</button>
+        </form>
+        <form method="post" th:action="@{/clear-all-listings}"
+              onsubmit="return confirm('Clear ALL listings? This cannot be undone.');">
+          <button type="submit" class="contrast outline">Clear All</button>
+        </form>
+      </div>
+      <div style="margin-top: 2rem;">
+        <form method="post" th:action="@{/logout}">
+          <button type="submit" class="outline secondary">Sign out</button>
+        </form>
+      </div>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

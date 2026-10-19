@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vesteda — Homes</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+    <!-- Restriction chips are new to this page, so they are styled here rather than in the shared
+         core sheet — no cross-app change for a vesteda-only element. Amber to read as "take note". -->
+    <style>
+      .hr-restrict { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.35rem; }
+      .rchip { font-size: 0.68rem; font-weight: 600; padding: 1px 7px; border-radius: 999px;
+        white-space: nowrap; background: rgba(230, 161, 0, 0.16); color: #8a6000; }
+      @media (prefers-color-scheme: dark) { .rchip { background: rgba(230, 161, 0, 0.2); color: #e6ba55; } }
+      :root[data-theme="dark"] .rchip { background: rgba(230, 161, 0, 0.2); color: #e6ba55; }
+      :root[data-theme="light"] .rchip { background: rgba(230, 161, 0, 0.16); color: #8a6000; }
+      /* Detail-page facts: one muted line, dot-separated. */
+      .hr-extra { display: flex; flex-wrap: wrap; gap: 0.15rem 0.6rem; margin-top: 0.2rem;
+        font-size: 0.8rem; color: var(--pico-muted-color, #6b7280); }
+      .hr-extra .elabel { font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+
+    <main class="container">
+      <h1 style="margin-bottom:0.25rem;">Homes</h1>
+      <p style="color: var(--pico-muted-color); margin-top:0;">
+        Every home we track in <span th:text="${targetCity}">Amsterdam</span>. The
+        <a href="/">Requests</a> page is the one to watch — this is the full list behind it.
+      </p>
+
+      <!-- The shape of the list at a glance, before any scrolling. -->
+      <div class="chip-row" style="margin:0.75rem 0 1rem;">
+        <span class="chip" th:text="${total} + ' total'">149 total</span>
+        <span class="chip ok" th:text="${availableCount} + ' available'">115 available</span>
+        <span class="chip" th:if="${rentCeiling != null}"
+              th:text="${canApplyCount} + ' you could apply for'">36 you could apply for</span>
+        <span class="chip" th:text="${appliedCount} + ' applied'">4 applied</span>
+      </div>
+
+      <!-- Filter + sort. Both act on the DOM instantly; there is no round trip. -->
+      <div class="browse-bar">
+        <div class="filter-chips" role="tablist" aria-label="Filter homes">
+          <button type="button" class="fchip is-active" data-filter="all">All</button>
+          <button type="button" class="fchip" data-filter="canapply" th:if="${rentCeiling != null}">Can apply</button>
+          <button type="button" class="fchip" data-filter="available">Available</button>
+          <button type="button" class="fchip" data-filter="applied">Applied</button>
+        </div>
+        <label class="sort-field">
+          <span>Sort</span>
+          <select id="homeSort">
+            <option value="new">Newest</option>
+            <option value="cheap">Cheapest</option>
+            <option value="big">Largest</option>
+            <option value="az">A–Z</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="home-list" id="homeList">
+        <article th:each="r : ${rows}" class="home-row"
+                 th:classappend="${r.applied} ? 'is-applied' : ''"
+                 th:attr="data-status=${r.status},
+                          data-applied=${r.applied},
+                          data-canapply=${r.canApply},
+                          data-available=${r.available},
+                          data-rent=${r.rent != null ? r.rent : 0},
+                          data-area=${r.area != null ? r.area : 0},
+                          data-seen=${r.seenEpoch},
+                          data-title=${r.title}">
+          <div class="hr-main">
+            <a class="hr-title" target="_blank" rel="noopener"
+               th:if="${r.portalHash != null}"
+               th:href="'https://hurenbij.vesteda.com/object/' + ${r.portalHash} + '/'"
+               th:text="${r.title}">Address</a>
+            <span class="hr-title" th:if="${r.portalHash == null}" th:text="${r.title}">Address</span>
+            <div class="hr-facts">
+              <span class="hr-rent" th:if="${r.rent != null}" th:text="'€' + ${r.rent}">€1104</span>
+              <span th:if="${r.area != null}" th:text="${r.area} + ' m²'">59 m²</span>
+              <span th:if="${r.bedrooms != null}"
+                    th:text="${r.bedrooms} + (${r.bedrooms} == 1 ? ' bed' : ' beds')">1 bed</span>
+              <span th:if="${r.dwellingType != null}" th:text="${r.dwellingType}">Appartement</span>
+            </div>
+            <!-- Facts that live only on the home's own detail page, folded in by the enrichment pass.
+                 Absent until that has run, so every field guards on null. -->
+            <div class="hr-extra"
+                 th:if="${r.serviceCosts != null or r.availableFrom != null or r.energyLabel != null}">
+              <span th:if="${r.serviceCosts != null}" th:text="'+€' + ${r.serviceCosts} + '/mo service'">+€85/mo service</span>
+              <span th:if="${r.availabilityLabel != null}" th:text="${r.availabilityLabel}">Available 13 augustus 2026</span>
+              <span class="elabel" th:if="${r.energyLabel != null}" th:text="'Energy ' + ${r.energyLabel}">Energy A++</span>
+            </div>
+            <!-- Who Vesteda gives this home to first. A general applicant is out-queued on these, so
+                 the score marks them down; the two hard gates (65+, care) are counted out entirely. -->
+            <div class="hr-restrict" th:if="${not #lists.isEmpty(r.restrictions)}">
+              <span class="rchip" th:each="rr : ${r.restrictions}" th:text="${rr}">Key professions</span>
+            </div>
+          </div>
+          <div class="hr-side">
+            <div class="hr-tags">
+              <span class="badge" th:classappend="'badge-' + ${r.status}" th:text="${r.status}">available</span>
+              <span class="hr-flag applied" th:if="${r.applied}">✓ Applied</span>
+              <span class="hr-flag can" th:if="${r.canApply and not r.applied}">In budget</span>
+            </div>
+            <time class="hr-seen" th:if="${r.firstSeenAt != null}"
+                  th:datetime="${r.firstSeenAt}" th:title="${r.firstSeenAt}"
+                  data-fmt="relative" th:text="${r.firstSeenAt}"></time>
+          </div>
+        </article>
+      </div>
+
+      <p class="home-empty" id="homeEmpty" hidden>No homes match this filter.</p>
+      <p class="home-empty" th:if="${total == 0}">
+        No homes yet. They'll appear as soon as the crawler has run.
+      </p>
+    </main>
+
+    <script src="/app.js"></script>
+    <script>
+      (function () {
+        var list = document.getElementById('homeList');
+        if (!list) return;
+        var rows = Array.prototype.slice.call(list.querySelectorAll('.home-row'));
+        var chips = document.querySelectorAll('.fchip');
+        var sortSel = document.getElementById('homeSort');
+        var empty = document.getElementById('homeEmpty');
+        var filter = 'all';
+
+        function matches(row) {
+          switch (filter) {
+            case 'canapply': return row.dataset.canapply === 'true';
+            case 'available': return row.dataset.available === 'true';
+            case 'applied': return row.dataset.applied === 'true';
+            default: return true;
+          }
+        }
+
+        function apply() {
+          var shown = 0;
+          rows.forEach(function (r) {
+            var ok = matches(r);
+            r.hidden = !ok;
+            if (ok) shown++;
+          });
+          if (empty) empty.hidden = shown !== 0;
+        }
+
+        function sortRows() {
+          var key = sortSel ? sortSel.value : 'new';
+          var sorted = rows.slice().sort(function (a, b) {
+            switch (key) {
+              case 'cheap': return num(a, 'rent') - num(b, 'rent');
+              case 'big': return num(b, 'area') - num(a, 'area');
+              case 'az': return (a.dataset.title || '').localeCompare(b.dataset.title || '');
+              default: return num(b, 'seen') - num(a, 'seen');
+            }
+          });
+          sorted.forEach(function (r) { list.appendChild(r); });
+        }
+
+        function num(el, key) {
+          var v = parseFloat(el.dataset[key]);
+          return isNaN(v) ? 0 : v;
+        }
+
+        chips.forEach(function (c) {
+          c.addEventListener('click', function () {
+            chips.forEach(function (x) { x.classList.remove('is-active'); });
+            c.classList.add('is-active');
+            filter = c.dataset.filter;
+            apply();
+          });
+        });
+        if (sortSel) sortSel.addEventListener('change', function () { sortRows(); });
+
+        sortRows();
+        apply();
+      })();
+    </script>
+  </body>
+</html>

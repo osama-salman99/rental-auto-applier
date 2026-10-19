@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>vb&t</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+    <main class="container">
+      <h1>Dashboard</h1>
+
+      <div th:if="${success}" role="alert" style="padding: 1rem; background: #d4edda; border-radius: 8px; margin-bottom: 1rem;">
+        <span th:text="${success}"></span>
+      </div>
+      <div th:if="${error}" role="alert" style="padding: 1rem; background: #f8d7da; border-radius: 8px; margin-bottom: 1rem;">
+        <span th:text="${error}"></span>
+      </div>
+
+      <h2 style="margin-top: 2rem;">Recent Listings</h2>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th><a th:href="@{/(sort=applied,dir=${currentSort=='applied' and currentDir=='asc'?'desc':'asc'})}">Applied<span th:if="${currentSort=='applied'}" class="sort-ind" th:text="${currentDir=='asc'?' ▲':' ▼'}"></span></a></th>
+              <th><a th:href="@{/(sort=match,dir=${currentSort=='match' and currentDir=='asc'?'desc':'asc'})}">Match<span th:if="${currentSort=='match'}" class="sort-ind" th:text="${currentDir=='asc'?' ▲':' ▼'}"></span></a></th>
+              <th><a th:href="@{/(sort=title,dir=${currentSort=='title' and currentDir=='asc'?'desc':'asc'})}">Title<span th:if="${currentSort=='title'}" class="sort-ind" th:text="${currentDir=='asc'?' ▲':' ▼'}"></span></a></th>
+              <th><a th:href="@{/(sort=city,dir=${currentSort=='city' and currentDir=='asc'?'desc':'asc'})}">City<span th:if="${currentSort=='city'}" class="sort-ind" th:text="${currentDir=='asc'?' ▲':' ▼'}"></span></a></th>
+              <th><a th:href="@{/(sort=area,dir=${currentSort=='area' and currentDir=='asc'?'desc':'asc'})}">Area<span th:if="${currentSort=='area'}" class="sort-ind" th:text="${currentDir=='asc'?' ▲':' ▼'}"></span></a></th>
+              <th><a th:href="@{/(sort=beds,dir=${currentSort=='beds' and currentDir=='asc'?'desc':'asc'})}">Beds<span th:if="${currentSort=='beds'}" class="sort-ind" th:text="${currentDir=='asc'?' ▲':' ▼'}"></span></a></th>
+              <th><a th:href="@{/(sort=price,dir=${currentSort=='price' and currentDir=='asc'?'desc':'asc'})}">Price<span th:if="${currentSort=='price'}" class="sort-ind" th:text="${currentDir=='asc'?' ▲':' ▼'}"></span></a></th>
+              <th><a th:href="@{/(sort=status,dir=${currentSort=='status' and currentDir=='asc'?'desc':'asc'})}">Status<span th:if="${currentSort=='status'}" class="sort-ind" th:text="${currentDir=='asc'?' ▲':' ▼'}"></span></a></th>
+              <th><a th:href="@{/(sort=seen,dir=${currentSort=='seen' and currentDir=='asc'?'desc':'asc'})}">First Seen<span th:if="${currentSort=='seen'}" class="sort-ind" th:text="${currentDir=='asc'?' ▲':' ▼'}"></span></a></th>
+              <th><a th:href="@{/(sort=notified,dir=${currentSort=='notified' and currentDir=='asc'?'desc':'asc'})}">Notified<span th:if="${currentSort=='notified'}" class="sort-ind" th:text="${currentDir=='asc'?' ▲':' ▼'}"></span></a></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="listing : ${listings}" th:classappend="${listing.applied} ? 'applied' : ''">
+              <td class="applied-cell" style="text-align: center;">
+                <input type="checkbox"
+                       th:checked="${listing.applied}"
+                       th:attr="data-listing-id=${listing.id}"
+                       class="applied-toggle" />
+              </td>
+              <td th:text="${matchingIds.contains(listing.id) ? 'Yes' : ''}"></td>
+              <td>
+                <a th:href="'https://vbtverhuurmakelaars.nl' + ${listing.slug}" target="_blank"
+                   th:text="${listing.title}"></a>
+              </td>
+              <td th:text="${listing.city}"></td>
+              <td th:text="${listing.livingArea != null ? listing.livingArea + ' m²' : '-'}"></td>
+              <td th:text="${listing.bedrooms != null ? listing.bedrooms : '-'}"></td>
+              <td th:text="${listing.price != null ? '€' + listing.price : '-'}"></td>
+              <td>
+                <span class="badge"
+                      th:classappend="'badge-' + ${listing.stage}"
+                      th:text="${listing.stage}"></span>
+              </td>
+              <td>
+                <time th:if="${listing.firstSeenAt != null}"
+                      th:datetime="${listing.firstSeenAt}"
+                      th:title="${listing.firstSeenAt}"
+                      data-fmt="relative"
+                      th:text="${listing.firstSeenAt}"></time>
+                <span th:if="${listing.firstSeenAt == null}">-</span>
+              </td>
+              <td th:text="${listing.notificationSent ? 'Yes' : '–'}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(listings)}">
+              <td colspan="10" style="text-align: center;">No listings found yet. Click "Crawl Now" to fetch listings.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

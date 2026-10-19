@@ -1,0 +1,29 @@
+.gradle/
+build/
+*.class
+*.jar
+*.war
+
+# Must come AFTER *.jar — later rules win, otherwise the wrapper jar is ignored
+# and a fresh clone (i.e. CI) cannot run ./gradlew.
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# H2 database
+data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+requirements.md
+CLAUDE.md
+.env
+# A local copy of the application profile (see ROOFZ_APPLICANT_PROFILE)
+/roofz/applicant-profile.json

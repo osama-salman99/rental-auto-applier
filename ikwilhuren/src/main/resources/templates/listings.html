@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Homes — Ik Wil Huren</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: appHeader}"></header>
+
+    <main class="container">
+      <div class="page-head">
+        <h1>Homes</h1>
+        <div class="page-actions">
+          <form method="post" th:action="@{/crawl-now}">
+            <button type="submit" class="secondary">Check now</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="chip-row">
+        <span class="chip" th:text="${#lists.size(listings)} + ' tracked'">876 tracked</span>
+        <span class="chip" th:if="${config.rentCeiling != null}"
+              th:text="'Up to €' + ${config.rentCeiling}">Up to €1400</span>
+      </div>
+
+      <div class="listing-list">
+        <th:block th:each="v : ${listings}">
+          <div th:replace="~{fragments/listing :: listingCard(${v})}"></div>
+        </th:block>
+      </div>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
